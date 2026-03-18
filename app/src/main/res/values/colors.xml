@@ -1,0 +1,15 @@
+<resources>
+    <color name="colorPrimary">#2196F3</color>
+    <color name="colorPrimaryDark">#1976D2</color>
+    <color name="colorSecondary">#4CAF50</color>
+    <color name="colorSecondaryDark">#388E3C</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="light_gray">#F5F5F5</color>
+    <color name="gray">#9E9E9E</color>
+    <color name="dark_gray">#424242</color>
+    <color name="red">#F44336</color>
+    <color name="orange">#FF9800</color>
+    <color name="blue">#2196F3</color>
+    <color name="purple">#9C27B0</color>
+</resources>

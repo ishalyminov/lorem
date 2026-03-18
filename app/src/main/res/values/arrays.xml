@@ -1,0 +1,17 @@
+<resources>
+    <!-- Proximity Radius Options -->
+    <string-array name="proximity_radii">
+        <item>50m</item>
+        <item>100m</item>
+        <item>300m</item>
+        <item>500m</item>
+    </string-array>
+
+    <!-- Proximity Radius Labels -->
+    <string-array name="proximity_radii_labels">
+        <item>@string/radius_50m</item>
+        <item>@string/radius_100m</item>
+        <item>@string/radius_300m</item>
+        <item>@string/radius_500m</item>
+    </string-array>
+</resources>

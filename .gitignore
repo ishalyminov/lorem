@@ -1,0 +1,20 @@
+# Build outputs
+build/
+app/build/
+*.apk
+.gradle/
+gradle-app.setting
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+.project
+.classpath
+
+# Local
+local.properties
+local.keystore
+
+# Keystore passwords (sensitive)
+keystore/*.jks

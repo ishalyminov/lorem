@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/inputTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Title"
+            android:inputType="text"
+            android:maxLines="1" />
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/inputDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description (optional)"
+            android:inputType="text"
+            android:maxLines="3" />
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/inputLocationLat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Latitude"
+            android:inputType="numberSigned"
+            android:maxLines="1" />
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/inputLocationLng"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Longitude"
+            android:inputType="numberSigned"
+            android:maxLines="1" />
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/inputRadius"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Radius (meters)"
+            android:inputType="numberSigned"
+            android:maxLines="1" />
+
+    </LinearLayout>
+
+</ScrollView>

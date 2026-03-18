@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Location Reminder</string>
+    <string name="add_reminder">Add Reminder</string>
+    <string name="edit_reminder">Edit Reminder</string>
+    <string name="delete_reminder">Delete Reminder</string>
+    <string name="title_hint">Title</string>
+    <string name="description_hint">Description</string>
+    <string name="select_radius">Select Proximity Radius</string>
+    <string name="radius_50m">50 meters</string>
+    <string name="radius_100m">100 meters</string>
+    <string name="radius_300m">300 meters</string>
+    <string name="radius_500m">500 meters</string>
+    <string name="my_location">My Location</string>
+    <string name="no_reminders">No reminders yet. Add one below!</string>
+    <string name="location_permission_required">Location permission is required to use this app.</string>
+    <string name="notification_permission_required">Notification permission is required for reminders.</string>
+    <string name="reminder_active">Active</string>
+    <string name="reminder_inactive">Inactive</string>
+    <string name="location_marker_title">Reminder Location</string>
+    <string name="notification_channel_name">Location Reminder Channel</string>
+    <string name="notification_channel_description">Shows notifications when you are near a saved reminder location.</string>
+    <string name="monitoring_location">Monitoring your location for nearby reminders...</string>
+    <string name="reminder_triggered">Reminder triggered!</string>
+</resources>
