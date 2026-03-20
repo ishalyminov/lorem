@@ -1,13 +1,60 @@
 <resources>
-    <color name="colorPrimary">#2196F3</color>
-    <color name="colorPrimaryDark">#1976D2</color>
-    <color name="colorSecondary">#4CAF50</color>
-    <color name="colorSecondaryDark">#388E3C</color>
+    <!-- Primary Colors -->
+    <color name="colorPrimary">#6200EE</color>
+    <color name="colorPrimaryDark">#3700B3</color>
+    <color name="colorPrimaryVariant">#3700B3</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    
+    <!-- Secondary Colors -->
+    <color name="colorSecondary">#03DAC5</color>
+    <color name="colorSecondaryDark">#01B7A4</color>
+    <color name="colorSecondaryVariant">#03DAC5</color>
+    <color name="colorOnSecondary">#000000</color>
+    
+    <!-- Material Design Neutral Colors -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-    <color name="light_gray">#F5F5F5</color>
-    <color name="gray">#9E9E9E</color>
-    <color name="dark_gray">#424242</color>
+    <color name="dark_black">#121212</color>
+    <color name="grey_50">#FAFAFA</color>
+    <color name="grey_100">#F5F5F5</color>
+    <color name="grey_200">#EEEEEE</color>
+    <color name="grey_300">#E0E0E0</color>
+    <color name="grey_400">#BDBDBD</color>
+    <color name="grey_500">#9E9E9E</color>
+    <color name="grey_600">#757575</color>
+    <color name="grey_700">#616161</color>
+    <color name="grey_800">#424242</color>
+    <color name="grey_900">#212121</color>
+    
+    <!-- Modern Gradient Background Colors -->
+    <color name="gradient_base_dark">#121212</color>
+    <color name="gradient_blue">#42A5FF</color>
+    <color name="gradient_purple">#AB84FF</color>
+    <color name="gradient_pink">#F06292</color>
+    <color name="gradient_orange">#FFB74D</color>
+    <color name="gradient_teal">#26A69A</color>
+    
+    <!-- Surface Colors -->
+    <color name="surface">#1E1E1E</color>
+    <color name="surface_variant">#2C2C2C</color>
+    <color name="on_surface">#FFFFFF</color>
+    <color name="on_surface_variant">#E0E0E0</color>
+    
+    <!-- Error Colors -->
+    <color name="error">#B00020</color>
+    <color name="errorVariant">#CF6679</color>
+    <color name="on_error">#FFFFFF</color>
+    
+    <!-- Accent Colors -->
+    <color name="accent">#BB86FC</color>
+    <color name="accent_on_dark">#03DAC5</color>
+    
+    <!-- Additional functional colors -->
+    <color name="teal_200">#B2DFDB</color>
+    <color name="cyan_100">#E1F5FE</color>
+    <color name="blue_grey_800">#37474F</color>
+    
+    <!-- Legacy colors for backwards compatibility -->
     <color name="red">#F44336</color>
     <color name="orange">#FF9800</color>
     <color name="blue">#2196F3</color>

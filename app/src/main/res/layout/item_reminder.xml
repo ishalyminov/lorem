@@ -1,56 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Modern Material 3 Reminder Item Card -->
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:padding="12dp"
-    android:background="#FFFFFF"
-    android:descendantFocusability="blocksDescendants">
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/surface_variant">
 
-    <LinearLayout
-        android:layout_width="0dp"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:paddingEnd="8dp">
+        android:padding="16dp">
 
+        <!-- Reminder Title -->
         <TextView
             android:id="@+id/reminderTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textStyle="bold"
-            android:textColor="#333333"
-            android:textSize="16sp"
-            android:maxLines="2"
-            android:ellipsize="end" />
+            android:text="Sample Reminder Title"
+            android:textColor="@color/on_surface"
+            android:textStyle="normal"/>
 
+        <!-- Optional location icon -->
+        <ImageView
+            android:id="@+id/locationIcon"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@android:drawable/ic_menu_compass"
+            android:tint="@color/gradient_purple"
+            app:layout_constraintTop_toTopOf="@id/reminderTitle"
+            app:layout_constraintStart_toEndOf="@id/reminderTitle"/>
+
+        <!-- Horizontal Divider -->
+        <View
+            android:id="@+id/divider"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:background="@color/grey_800"
+            android:alpha="0.3"
+            app:layout_constraintTop_toBottomOf="@id/reminderTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Reminder Description -->
         <TextView
             android:id="@+id/reminderDescription"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="#666666"
-            android:textSize="14sp"
+            android:text="Sample reminder description with optional details..."
+            android:textColor="@color/grey_300"
             android:maxLines="2"
-            android:ellipsize="end" />
+            android:ellipsize="end"/>
 
+        <!-- Reminder Radius -->
         <TextView
             android:id="@+id/reminderRadius"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#999999"
-            android:textSize="12sp"
-            android:layout_marginTop="4dp" />
+            android:text="Within 500m"
+            android:textColor="@color/grey_500"
+            app:layout_constraintTop_toBottomOf="@id/reminderDescription"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
 
-    </LinearLayout>
+        <!-- Delete Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/reminderDelete"
+            android:text="✕"
+            android:textColor="@color/colorPrimary"
+            android:textSize="18sp"
+            android:paddingHorizontal="12dp"
+            app:layout_constraintTop_toBottomOf="@id/reminderTitle"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:focusable="false"
+            android:clickable="true"/>
 
-    <androidx.appcompat.widget.AppCompatEditText
-        android:id="@+id/reminderDelete"
-        android:layout_width="80dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textAlignment="center"
-        android:maxLines="1"
-        android:focusable="false"
-        android:clickable="true" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
-</LinearLayout>
+</androidx.cardview.widget.CardView>

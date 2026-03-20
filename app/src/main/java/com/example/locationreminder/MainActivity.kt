@@ -33,9 +33,12 @@ class MainActivity : AppCompatActivity(), ReminderAdapter.ReminderClickListener 
         db = ReminderDatabase.getInstance(this)
         
         recyclerView = findViewById(R.id.remindersRecyclerView)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-
-        val addButton = findViewById<android.widget.ImageButton>(R.id.addReminderButton)
+        // Set up LinearLayoutManager for vertical scrolling list
+        val layoutManager = LinearLayoutManager(this)
+        recyclerView.layoutManager = layoutManager
+        
+        // Initialize and set up FAB in lower right corner
+        val addButton = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.addReminderButton)
         addButton.setOnClickListener { showAddReminderDialog() }
 
         loadReminders()
@@ -152,7 +155,7 @@ class MainActivity : AppCompatActivity(), ReminderAdapter.ReminderClickListener 
     private fun showNotificationEnabledDialog() {
         val intent = Intent("android.settings.APP_NOTIFICATION_SETTINGS").apply {
             putExtra("app_package", packageName)
-            putExtra("app_id", android.content.Intent.FLAG_ACTIVITY_NEW_TASK.toLong())
+            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         
         AlertDialog.Builder(this)

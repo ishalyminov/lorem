@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simplified gradient background - crash-free Material Design -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Animated gradient using gradient animation -->
+    <gradient
+        android:angle="135"
+        android:endColor="#2A67F0FF"
+        android:startColor="#2A9C27B0"
+        android:type="sweep"
+        android:centerColor="#2AB589FF" />
+
+    <!-- Background color for dark theme -->
+    <solid
+        android:color="#121212" />
+
+    <!-- Rounded corners for modern look -->
+    <corners
+        android:radius="16dp" />
+</shape>
