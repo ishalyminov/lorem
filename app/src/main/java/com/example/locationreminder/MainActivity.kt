@@ -17,7 +17,7 @@ import com.example.locationreminder.data.Reminder
 class MainActivity : AppCompatActivity(), ReminderAdapter.ReminderClickListener {
 
     private lateinit var recyclerView: RecycleView
-    private lateinit var adapter: ReminderAdapter
+    private var adapter: ReminderAdapter? = null
     private lateinit var db: ReminderDatabase
     private var allReminders: List<Reminder> = emptyList()
     
@@ -33,7 +33,6 @@ class MainActivity : AppCompatActivity(), ReminderAdapter.ReminderClickListener 
         db = ReminderDatabase.getInstance(this)
         
         recyclerView = findViewById(R.id.remindersRecyclerView)
-        // Set up LinearLayoutManager for vertical scrolling list
         val layoutManager = LinearLayoutManager(this)
         recyclerView.layoutManager = layoutManager
         
@@ -42,14 +41,13 @@ class MainActivity : AppCompatActivity(), ReminderAdapter.ReminderClickListener 
         addButton.setOnClickListener { showAddReminderDialog() }
 
         loadReminders()
-
-        requestLocationPermission()
     }
 
     private fun loadReminders() {
         allReminders = db.getAllReminders()
-        adapter = ReminderAdapter(this)
-        adapter.submitList(allReminders)
+        
+        adapter = ReminderAdapter(listener = this@MainActivity)
+        adapter?.submitList(allReminders, this)
         recyclerView.adapter = adapter
     }
 
@@ -146,7 +144,10 @@ class MainActivity : AppCompatActivity(), ReminderAdapter.ReminderClickListener 
 
             loadReminders()
             
-            Toast.makeText(this, "Reminder added", Toast.LENGTH_SHORT).show()
+            // Start background location monitoring
+            LocationMonitorService.startLocationMonitoring(this)
+            
+            Toast.makeText(this, "Reminder added. Location tracking started.", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(this, "Title is required", Toast.LENGTH_SHORT).show()
         }
@@ -164,7 +165,7 @@ class MainActivity : AppCompatActivity(), ReminderAdapter.ReminderClickListener 
             .setPositiveButton("Enable") { _, _ ->
                 startActivity(intent)
             }
-            .setNegativeButton("OK") { _, _ -> }
+            .setNegativeButton("OK", null)
             .show()
     }
 

@@ -153,6 +153,15 @@ adb uninstall com.example.locationreminder
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
+#### WSL + Windows ADB Installation (Recommended for WSL Users)
+
+If you're using WSL with Windows ADB, use the `install_apk.sh` script:
+```bash
+bash install_apk.sh
+```
+
+This script uses the correct WSL path format for Windows adb.exe.
+
 #### Install Debug APK
 ```bash
 adb install -r app/build/outputs/apk/debug/app-debug.apk

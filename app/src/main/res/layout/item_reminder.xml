@@ -22,15 +22,24 @@
             android:textColor="@color/on_surface"
             android:textStyle="normal"/>
 
-        <!-- Optional location icon -->
+        <!-- Location icon -->
         <ImageView
             android:id="@+id/locationIcon"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:src="@android:drawable/ic_menu_compass"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@android:drawable/ic_menu_mylocation"
             android:tint="@color/gradient_purple"
             app:layout_constraintTop_toTopOf="@id/reminderTitle"
             app:layout_constraintStart_toEndOf="@id/reminderTitle"/>
+
+        <!-- Status indicator (green for active, gray for inactive) -->
+        <View
+            android:id="@+id/statusIndicator"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:background="@drawable/circle_indicator"
+            app:layout_constraintTop_toBottomOf="@id/reminderTitle"
+            app:layout_constraintStart_toEndOf="@id/divider"/>
 
         <!-- Horizontal Divider -->
         <View
@@ -40,8 +49,8 @@
             android:background="@color/grey_800"
             android:alpha="0.3"
             app:layout_constraintTop_toBottomOf="@id/reminderTitle"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintStart_toStartOf="@id/reminderTitle"
+            app:layout_constraintEnd_toStartOf="@id/statusIndicator"/>
 
         <!-- Reminder Description -->
         <TextView
@@ -60,6 +69,16 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
+        <!-- Triggered notification indicator -->
+        <View
+            android:id="@+id/triggeredIndicator"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/circle_indicator"
+            android:backgroundTint="@color/colorPrimary"
+            app:layout_constraintTop_toBottomOf="@id/divider"
+            app:layout_constraintStart_toEndOf="@id/reminderRadius"/>
+
         <!-- Delete Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/reminderDelete"
@@ -67,8 +86,21 @@
             android:textColor="@color/colorPrimary"
             android:textSize="18sp"
             android:paddingHorizontal="12dp"
-            app:layout_constraintTop_toBottomOf="@id/reminderTitle"
+            app:layout_constraintTop_toBottomOf="@id/reminderRadius"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/reminderStatusBtn"
+            android:focusable="false"
+            android:clickable="true"/>
+
+        <!-- Toggle Status Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/reminderStatusBtn"
+            android:text="●"
+            android:textColor="@color/colorPrimary"
+            android:textSize="16sp"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/divider"
+            app:layout_constraintBottom_toBottomOf="@id/reminderDelete"
             app:layout_constraintEnd_toEndOf="parent"
             android:focusable="false"
             android:clickable="true"/>

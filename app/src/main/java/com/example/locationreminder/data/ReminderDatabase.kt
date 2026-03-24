@@ -149,17 +149,6 @@ class ReminderDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
         )
     }
 
-    /**
-     * Delete a reminder by id
-     */
-    fun delete(id: Long) {
-        val db = this.db() ?: return
-        db.delete("reminders", "id = ?", arrayOf(id.toString()))
-    }
-
-    /**
-     * Get reminder by id
-     */
     fun getReminderById(id: Long): Reminder? {
         val db = this.readable()
             ?: this.writable()
@@ -187,6 +176,23 @@ class ReminderDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
                 )
             } else null
         }
+    }
+
+    /**
+     * Delete a reminder by id
+     */
+    fun delete(id: Long) {
+        val db = this.db() ?: return
+        db.delete("reminders", "id = ?", arrayOf(id.toString()))
+    }
+
+    /**
+     * Toggle reminder active/inactive status
+     */
+    fun toggleReminderStatus(reminder: Reminder): Boolean {
+        val updatedReminder = reminder.copy(is_active = !reminder.is_active)
+        update(updatedReminder)
+        return updatedReminder.is_active
     }
 
     /** Helper function to get nullable string from cursor */

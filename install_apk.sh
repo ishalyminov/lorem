@@ -1,0 +1,2 @@
+#!/bin/bash
+/mnt/c/Users/ishalyminov/AppData/Local/Android/Sdk/platform-tools/adb.exe install -r '\\wsl$\Ubuntu\home\ishalyminov\data\location_reminder\app\build\outputs\apk\release\app-release.apk' 2>&1
