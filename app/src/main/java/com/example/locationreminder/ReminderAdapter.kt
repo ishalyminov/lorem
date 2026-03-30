@@ -9,32 +9,26 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView as RecycleView
 import com.example.locationreminder.data.Reminder
 import com.example.locationreminder.data.ReminderDatabase
-import java.util.concurrent.ConcurrentHashMap
 
 open class ReminderAdapter(
-    open var listener: ReminderClickListener? = null
+    open var listener: ReminderClickListener? = null,
+    var database: ReminderDatabase? = null
 ) : RecycleView.Adapter<ReminderAdapter.ViewHolder>() {
-
-    companion object {
-        fun getListener(adapter: ReminderAdapter): ReminderClickListener? {
-            return adapter.listener
-        }
-    }
 
     interface ReminderClickListener {
         fun onReminderClick(reminder: Reminder)
     }
 
     private val reminders = mutableListOf<Reminder>()
-    private var database: ReminderDatabase? = null
     private var parentContext: android.content.Context? = null
     
     // Track last trigger time for each reminder ID to prevent spam notifications
-    private val lastTriggerTimes = ConcurrentHashMap<Long, Long>()
+    private val lastTriggerTimes = java.util.concurrent.ConcurrentHashMap<Long, Long>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_reminder, parent, false)
-        return ViewHolder(view)
+        val context = parent.context
+        val view = LayoutInflater.from(context).inflate(R.layout.item_reminder, parent, false)
+        return ViewHolder(view, this)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -44,7 +38,6 @@ open class ReminderAdapter(
     override fun getItemCount(): Int = reminders.size
 
     fun submitList(list: List<Reminder>, context: android.content.Context) {
-        database = ReminderDatabase(context.applicationContext)
         parentContext = context
         
         // Reset trigger times when list changes
@@ -55,7 +48,19 @@ open class ReminderAdapter(
         notifyDataSetChanged()
     }
 
-    inner class ViewHolder(itemView: View) : RecycleView.ViewHolder(itemView), View.OnClickListener {
+    fun onItemClicked(reminder: Reminder) {
+        listener?.onReminderClick(reminder)
+    }
+
+    fun toggleStatus(reminder: Reminder) {
+        val isActive = reminder.is_active
+        lastTriggerTimes[reminder.id] = System.currentTimeMillis() / 1000L
+        notifyDataSetChanged()
+    }
+
+    inner class ViewHolder(itemView: View, adapterInstance: ReminderAdapter) : 
+            RecycleView.ViewHolder(itemView), View.OnClickListener {
+        
         var itemPosition: Int = 0
         
         private val titleText: TextView = itemView.findViewById(R.id.reminderTitle)
@@ -67,8 +72,15 @@ open class ReminderAdapter(
         private val deleteBtn: Button = itemView.findViewById(R.id.reminderDelete)
         private val statusBtn: Button = itemView.findViewById(R.id.reminderStatusBtn)
 
+        private var reminder: Reminder? = null
+        
         fun bind(reminder: Reminder, pos: Int) {
             itemPosition = pos
+            this.reminder = reminder
+            
+            // Set the view tag for easy access from click listeners
+            itemView.tag = reminder
+            
             titleText.text = reminder.title
             descriptionText.text = reminder.description.ifEmpty { "No description" }
             radiusText.text = "${reminder.proximityRadiusMeters}m radius"
@@ -110,41 +122,29 @@ open class ReminderAdapter(
         }
 
         init {
-            itemView.setOnClickListener { 
-                reminder?.let { listener?.onReminderClick(it) }
-            }
-            deleteBtn.setOnClickListener { 
-                val reminder = itemView.tag as? Reminder
-                if (reminder != null) {
-                    database?.delete(reminder.id)
-                    notifyItemRemoved(itemPosition)
+            adapterInstance?.let { adapter ->
+                itemView.setOnClickListener { 
+                    val currentReminder = (it.tag as? Reminder) ?: return@setOnClickListener
+                    adapter.onItemClicked(currentReminder)
+                }
+                
+                deleteBtn.setOnClickListener { 
+                    val currentReminder = (itemView.tag as? Reminder)
+                    if (currentReminder != null) {
+                        adapter.database?.delete(currentReminder.id)
+                        adapter.notifyItemRemoved(itemPosition)
+                    }
+                }
+                
+                statusBtn.setOnClickListener {
+                    val currentReminder = (itemView.tag as? Reminder)
+                    if (currentReminder != null) {
+                        adapter.toggleStatus(currentReminder)
+                    }
                 }
             }
-            statusBtn.setOnClickListener {
-                val reminder = itemView.tag as? Reminder
-                if (reminder != null) {
-                    toggleStatus(reminder)
-                }
-            }
         }
 
-        private var reminder: Reminder? = null
-        
-        fun setReminder(r: Reminder) {
-            this.reminder = r
-        }
-
-        private fun toggleStatus(reminder: Reminder) {
-            // Toggle the status in local cache - database update happens separately
-            val isActive = reminder.is_active
-            lastTriggerTimes[reminder.id] = System.currentTimeMillis() / 1000L
-            notifyDataSetChanged()
-        }
-
-        private fun onReminderClick(reminder: Reminder?) {
-            reminder?.let { listener?.onReminderClick(it) }
-        }
-
-        override fun onClick(v: View?) {}
+        override fun onClick(p0: View?) {}
     }
 }

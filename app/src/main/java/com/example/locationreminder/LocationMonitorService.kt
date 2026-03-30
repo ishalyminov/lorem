@@ -84,8 +84,8 @@ class LocationMonitorService : Service() {
 
     private fun tryGetLocationAndUpdateTracking() {
         executor.execute {
-            try {
-                fusedLocationClient?.lastLocation?.addOnSuccessListener { location ->
+            fusedLocationClient?.let { client ->
+                client.lastLocation.addOnSuccessListener { location ->
                     if (location != null) {
                         lastKnownLocation = location
                         checkForReminderTriggers(location)
@@ -93,8 +93,13 @@ class LocationMonitorService : Service() {
                     } else {
                         handler?.postDelayed(processRunnable!!, 2000L)
                     }
-                }?.addOnFailureListener { e -> e.printStackTrace(); handler?.postDelayed(processRunnable!!, 2000L) }
-            } catch (e: Exception) { e.printStackTrace(); handler?.postDelayed(processRunnable!!, 2000L) }
+                }.addOnFailureListener { e -> 
+                    e.printStackTrace()
+                    handler?.postDelayed(processRunnable!!, 2000L)
+                }
+            } ?: run {
+                handler?.postDelayed(processRunnable!!, 2000L)
+            }
         }
     }
 
@@ -126,28 +131,39 @@ class LocationMonitorService : Service() {
             .setContentIntent(pendingIntent).setOngoing(true).build()
     }
 
-    private fun checkForReminderTriggers(location: android.location.Location) {
-        val activeReminders = db.getAllReminders().filter { it.is_active }
-        for (reminder in activeReminders) {
-            val distance = calculateDistanceBetweenTwoPoints(
-                location.latitude, location.longitude, reminder.locationLat, reminder.locationLng)
-            val now = System.currentTimeMillis() / 1000L
-            val lastTriggerTime = triggerTimes[reminder.id] ?: 0L
-            if (distance <= reminder.proximityRadiusMeters && (now - lastTriggerTime) >= 60) {
-                sendTriggerNotification(reminder, distance)
-                triggerTimes[reminder.id] = now
+    private fun checkForReminderTriggers(location: android.location.Location?) {
+        if (location == null) return
+        
+        try {
+            val activeReminders = db.getAllReminders().filter { it.is_active }
+            for (reminder in activeReminders) {
+                val distance = calculateDistanceBetweenTwoPoints(
+                    location.latitude, location.longitude, reminder.locationLat, reminder.locationLng)
+                val now = System.currentTimeMillis() / 1000L
+                val lastTriggerTime = triggerTimes[reminder.id] ?: 0L
+                if (distance <= reminder.proximityRadiusMeters && (now - lastTriggerTime) >= 60) {
+                    sendTriggerNotification(reminder, distance)
+                    triggerTimes[reminder.id] = now
+                }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     private fun calculateDistanceBetweenTwoPoints(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val rlat1 = Math.toRadians(lat1).toDouble()
-        val rlon1 = Math.toRadians(lon1).toDouble()
-        val rlat2 = Math.toRadians(lat2).toDouble()
-        val rlon2 = Math.toRadians(lon2).toDouble()
-        val dlon = rlon2 - rlon1
-            val sinHalfLonSq: Double = Math.pow(Math.sin(dlon / 2.0).toDouble(), 2.0)
-            val sinHalfLatSq: Double = Math.pow(Math.sin((rlat2 - rlat1) / 2.0).toDouble(), 2.0)
+        // Convert degrees to radians
+        val rlat1 = Math.toRadians(lat1)
+        val rlon1 = Math.toRadians(lon1)
+        val rlat2 = Math.toRadians(lat2)
+        val rlon2 = Math.toRadians(lon2)
+        
+        // Haversine formula calculation
+        val dLat = rlat2 - rlat1
+        val dLon = rlon2 - rlon1
+        
+        val sinHalfLonSq = Math.pow(Math.sin(dLon / 2.0), 2.0)
+        val sinHalfLatSq = Math.pow(Math.sin(dLat / 2.0), 2.0)
         val a: Double = sinHalfLonSq + (Math.cos(rlat1) * Math.cos(rlat2) * sinHalfLatSq)
         return (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a)) * 6371000.0)
     }
