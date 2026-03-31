@@ -4,14 +4,14 @@ This document contains step-by-step instructions for building and deploying the 
 
 ## Prerequisites
 
-- JDK 17 installed and JAVA_HOME configured
-- Android SDK with platform 34
+- JDK 17 installed at `/usr/bin/java` (or path specified via JAVA_HOME)
+- Android SDK with platform 35 installed
 - ADB installed
 
 ### Step 1: Set up Java Development Kit (JDK)
 
 ```bash
-export JAVA_HOME=$HOME/.sdkman/candidates/java/17.*
+export JAVA_HOME=/usr
 # or use your preferred JDK path
 ```
 
@@ -19,91 +19,56 @@ export JAVA_HOME=$HOME/.sdkman/candidates/java/17.*
 
 ```bash
 sdkmanager "cmdline-tools;latest"
-sdkmanager "platforms;android-34"
+sdkmanager "platforms;android-35"
 sdkmanager "build-tools;34.0.0"
-export ANDROID_HOME=$HOME/Library/Android/sdk
+export ANDROID_HOME=/home/ishalyminov/android-sdk
 ```
 
 ## Build Instructions
 
-### Option 1: Using Gradle Command Line
+### Option 1: Using Direct Gradle (Recommended)
+
+If the gradle-8.6 directory does not exist, first run:
+
+```bash
+cd /path/to/location_reminder
+./scripts/setup_gradle.sh
+```
 
 #### Build Debug APK
 ```bash
-cd /path/to/location_reminder
-
-gradle clean assembleDebug
+export JAVA_HOME=/usr
+export ANDROID_HOME=/home/ishalyminov/android-sdk
+./gradle-8.6/bin/gradle clean assembleDebug --no-daemon
 
 # APK location: app/build/outputs/apk/debug/app-debug.apk
 ```
 
 #### Build Release APK (for distribution)
 
-First, create a keystore file if you haven't already:
-
-```bash
-mkdir -p keystore
-
-keytool -genkey -v \
-  -keystore keystore/location_reminder.jks \
-  -keyalg RSA -keysize 2048 \
-  -validity 10000 \
-  -alias location_reminder \
-  -storepass changeme \
-  -keypass changeme \
-  -dname "CN=LocationReminder, OU=Development, O=User, L=YourCity, ST=State, C=US"
-```
-
-Update `app/build.gradle.kts` with signing configuration if needed (see README.md for details).
-
 Build release APK:
 ```bash
-gradle clean assembleRelease
+export JAVA_HOME=/usr
+export ANDROID_HOME=/home/ishalyminov/android-sdk
+./gradle-8.6/bin/gradle clean assembleRelease --no-daemon
 
 # APK location: app/build/outputs/apk/release/app-release.apk
 ```
 
 ## Installation Instructions
 
-### Option 1: Using Gradlew Wrapper
-
-This is the simplest method. Navigate to the project directory and run:
-
+### Install Release APK to Device
 ```bash
-./gradlew assembleRelease
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
-### Option 2: WSL + Windows ADB (for developers using WSL)
+## Commit Changes (Do NOT commit gradle-8.6/)
 
-If you're running this in WSL and have installed adb.exe on Windows, use the install script:
-
-```bash
-bash install_apk.sh
-```
-
-This script handles the path conversion correctly for WSL environments.
-
-### Option 3: Direct Gradle Commands
-
-#### Clean and Build Debug APK
-```bash
-gradlew clean assembleDebug
-# APK: app/build/outputs/apk/debug/app-debug.apk
-```
-
-#### Clean and Build Release APK
-```bash
-gradlew clean assembleRelease
-# APK: app/build/outputs/apk/release/app-release.apk
-```
-
-## Commit Changes
-
-After building and testing, commit your changes:
+After building and testing, if there are any project source code changes:
 
 ```bash
 git add .
+# DO NOT commit gradle-8.6/ - it will be regenerated automatically using scripts/setup_gradle.sh
 git commit -m "feat: build and deploy latest version"
 ```
 
@@ -124,18 +89,4 @@ Before pushing, verify your APK is valid:
 ls -la app/build/outputs/apk/release/app-release.apk
 
 # View build output for any errors
-tail -50 gradle/app/build.gradle.kts
-```
-
-## Quick Deploy Script
-
-Run this command to deploy from WSL with Windows adb:
-
-```bash
-./install_apk.sh
-```
-
-Or with Gradlew wrapper (cross-platform):
-
-```bash
-./gradlew assembleRelease && adb install app/build/outputs/apk/release/app-release.apk -r
+tail -50 app/build.gradle.kts
