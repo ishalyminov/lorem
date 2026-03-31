@@ -5,6 +5,9 @@ app/build/
 .gradle/
 gradle-app.setting
 
+# Gradle distributed files (should be downloaded automatically)
+gradle-8.6/
+
 # IDE
 .idea/
 *.iml
