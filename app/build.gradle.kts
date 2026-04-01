@@ -1,6 +1,20 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application") version "8.2.1"
     id("org.jetbrains.kotlin.android") version "1.9.20"
+}
+
+// Load Maps API key from properties file
+val mapsApiKey: String by lazy {
+    val keyFile = file("../keystore/maps_api_key.properties")
+    if (keyFile.exists()) {
+        val props = Properties()
+        keyFile.inputStream().use { props.load(it) }
+        props.getProperty("GOOGLE_MAPS_API_KEY", "")
+    } else {
+        ""
+    }
 }
 
 android {
@@ -15,6 +29,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Inject Maps API key into manifest
+        manifestPlaceholders["googleMapsApiKey"] = mapsApiKey
     }
 
     compileOptions {
@@ -79,7 +96,7 @@ android {
 
         // Google Play Services - Location
         implementation("com.google.android.gms:play-services-location:21.0.+")
-        
+
         // Google Maps SDK
         implementation("com.google.android.gms:play-services-maps:19.0.+")
     }
