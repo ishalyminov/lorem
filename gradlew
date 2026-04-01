@@ -41,7 +41,7 @@ elif [ ! -f "$GRADLE_VER.zip" ]; then
 fi
 
 if [ -x "$GRADLE_BIN" ]; then
-    exec env ANDROID_HOME="$ANDROID_HOME" ANDROID_SDK_ROOT="$ANDROID_SDK_ROOT" "$JAVA_BIN" "$GRADLE_BIN" --no-daemon --stacktrace "$@"
+    exec env ANDROID_HOME="$ANDROID_HOME" ANDROID_SDK_ROOT="$ANDROID_SDK_ROOT" "$GRADLE_BIN" --no-daemon --stacktrace "$@"
 else
     echo "ERROR: Gradle not found. Please check your installation."
     exit 1

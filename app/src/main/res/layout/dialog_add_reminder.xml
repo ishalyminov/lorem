@@ -9,45 +9,127 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <androidx.appcompat.widget.AppCompatEditText
-            android:id="@+id/inputTitle"
+        <!-- Title Input -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Title"
-            android:inputType="text"
-            android:maxLines="1" />
+            android:hint="Reminder Title"
+            android:layout_marginBottom="8dp">
 
-        <androidx.appcompat.widget.AppCompatEditText
-            android:id="@+id/inputDescription"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="2" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Description Input -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Description (optional)"
-            android:inputType="text"
-            android:maxLines="3" />
+            android:layout_marginBottom="8dp">
 
-        <androidx.appcompat.widget.AppCompatEditText
-            android:id="@+id/inputLocationLat"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="3" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Location Selection Header -->
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Latitude"
-            android:inputType="numberSigned"
-            android:maxLines="1" />
+            android:text="Select Location:"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
 
-        <androidx.appcompat.widget.AppCompatEditText
-            android:id="@+id/inputLocationLng"
+        <!-- Location Search Box -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Longitude"
-            android:inputType="numberSigned"
-            android:maxLines="1" />
+            android:hint="Search Location (e.g., 'Central Park', 'Times Square')"
+            android:layout_marginBottom="8dp">
 
-        <androidx.appcompat.widget.AppCompatEditText
-            android:id="@+id/inputRadius"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputLocationSearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Current Location Button -->
+        <Button
+            android:id="@+id/btnGetCurrentLocation"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Radius (meters)"
-            android:inputType="numberSigned"
-            android:maxLines="1" />
+            android:text="📍 Use My Current Location"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+        <!-- View Map button -->
+        <Button
+            android:id="@+id/btnViewOnMap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🗺️ Select Location on Map"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+        <!-- Latitude Input (shown when using current location or custom lat) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Latitude (optional - auto-filled)"
+            android:layout_marginBottom="8dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputLocationLat"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal|textNoSuggestions"
+                android:maxLines="1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Longitude Input (shown when using current location or custom lng) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Longitude (optional - auto-filled)"
+            android:layout_marginBottom="8dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputLocationLng"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal|textNoSuggestions"
+                android:maxLines="1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Proximity Radius Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Proximity Radius (meters)"
+            android:layout_marginBottom="8dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputRadius"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:maxLines="1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
 
     </LinearLayout>
 

@@ -31,6 +31,16 @@
             </intent-filter>
         </activity>
 
+        <!-- Map Selection Activity -->
+        <activity
+            android:name=".MapSelectionActivity"
+            android:exported="false"
+            android:launchMode="singleTop">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.example.locationreminder.MainActivity" />
+        </activity>
+
         <!-- Location Monitor Service -->
         <service
             android:name=".LocationMonitorService"
