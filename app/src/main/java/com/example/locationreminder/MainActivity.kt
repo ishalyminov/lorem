@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -17,13 +18,20 @@ import com.example.locationreminder.R
 import com.example.locationreminder.ReminderAdapter
 import com.example.locationreminder.data.Reminder
 import com.example.locationreminder.data.ReminderDatabase
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecycleView
     private lateinit var db: ReminderDatabase
     private lateinit var adapter: ReminderAdapter
-    
+
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
     }
@@ -33,28 +41,43 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         db = ReminderDatabase.getInstance(this)
-        
+
         recyclerView = findViewById(R.id.remindersRecyclerView)
         val layoutManager = LinearLayoutManager(this)
         recyclerView.layoutManager = layoutManager
-        
+
         // Create and set up adapter with the database instance
         adapter = ReminderAdapter(listener = null, database = db)
         recyclerView.adapter = adapter
-        
+
         // Initialize and set up FAB in lower right corner
         val addButton = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.addReminderButton)
         addButton.setOnClickListener { showAddReminderDialog() }
 
         loadReminders()
-        
-        // Start location monitoring service
-        startLocationMonitoring()
+
+        // Request location permissions if not granted
+        if (!checkLocationPermissions()) {
+            requestLocationPermissions()
+        } else {
+            // Start location monitoring service
+            startLocationMonitoring()
+        }
     }
 
     private fun loadReminders() {
         val reminders = db.getAllReminders().filter { it.is_active }.sortedByDescending { it.createdAt }
         adapter.submitList(reminders, this)
+    }
+
+    private fun requestLocationPermissions() {
+        requestPermissions(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ),
+            LOCATION_PERMISSION_REQUEST_CODE
+        )
     }
 
     private fun startLocationMonitoring() {
@@ -79,7 +102,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkLocationPermissions(): Boolean {
         return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
-               ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -90,7 +113,7 @@ class MainActivity : AppCompatActivity() {
                     loadReminders()
                     startLocationMonitoring()
                 } else {
-                    Toast.makeText(this, "Location permission required", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Location permission required for full functionality", Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -98,30 +121,134 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAddReminderDialog() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_add_reminder, null)
-        
-        // Get current location for prefilled values
-        getCurrentLocation()?.let { (lat, lng) ->
-            view.findViewById<android.widget.EditText>(R.id.inputLocationLat).setText("${String.format("%.6f", lat)}")
-            view.findViewById<android.widget.EditText>(R.id.inputLocationLng).setText("${String.format("%.6f", lng)}")
-        }
-        
+
         // Prefill with dummy title and description for user convenience
         val dummyTitle = "My Location Reminder"
         val dummyDescription = "A reminder about my current location"
         view.findViewById<android.widget.EditText>(R.id.inputTitle).setText(dummyTitle)
         view.findViewById<android.widget.EditText>(R.id.inputDescription).setText(dummyDescription)
 
-        AlertDialog.Builder(this)
+        // Set default radius
+        view.findViewById<android.widget.EditText>(R.id.inputRadius).setText("100")
+
+        // Get MapView and set up the map
+        val mapView = view.findViewById<MapView>(R.id.mapPreview)
+        val loadingProgress = view.findViewById<android.widget.ProgressBar>(R.id.mapLoadingProgress)
+        val locationStatusText = view.findViewById<android.widget.TextView>(R.id.locationStatusText)
+
+        // Track current location marker
+        var currentMarker: Marker? = null
+        var currentLocation: Pair<Double, Double>? = null
+
+        // Create dialog first so we can manage MapView lifecycle
+        val dialog = AlertDialog.Builder(this)
             .setTitle("Add Location Reminder")
             .setView(view)
             .setPositiveButton("Save") { _, _ -> saveReminderFromDialog(view) }
             .setNegativeButton("Cancel", null)
-            .show()
+            .create()
+
+        // Initialize MapView
+        mapView.onCreate(null)
+        mapView.getMapAsync(OnMapReadyCallback { googleMap ->
+            // Configure the map
+            googleMap.uiSettings.isZoomControlsEnabled = true
+            googleMap.uiSettings.isMyLocationButtonEnabled = false
+            googleMap.uiSettings.isMapToolbarEnabled = false
+
+            // Get current location and show on map
+            if (checkLocationPermissions()) {
+                val location = getCurrentLocation()
+                if (location != null) {
+                    currentLocation = location
+                    val latLng = LatLng(location.first, location.second)
+
+                    // Update hidden fields
+                    view.findViewById<android.widget.EditText>(R.id.inputLocationLat).setText(String.format("%.6f", location.first))
+                    view.findViewById<android.widget.EditText>(R.id.inputLocationLng).setText(String.format("%.6f", location.second))
+
+                    // Add marker and move camera
+                    currentMarker = googleMap.addMarker(
+                        MarkerOptions()
+                            .position(latLng)
+                            .title("Reminder Location")
+                    )
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
+
+                    // Hide loading, show map
+                    loadingProgress.visibility = android.view.View.GONE
+                    locationStatusText.visibility = android.view.View.GONE
+                    mapView.visibility = android.view.View.VISIBLE
+                } else {
+                    // Show error state
+                    loadingProgress.visibility = android.view.View.GONE
+                    locationStatusText.text = "Unable to get location. Tap 'Change Location on Map' to select manually."
+                    locationStatusText.visibility = android.view.View.VISIBLE
+                }
+            } else {
+                // Request permissions
+                requestLocationPermissions()
+                loadingProgress.visibility = android.view.View.GONE
+                locationStatusText.text = "Location permission required. Tap 'Change Location on Map' to select manually."
+                locationStatusText.visibility = android.view.View.VISIBLE
+            }
+
+            // Allow user to tap on map to change location
+            googleMap.setOnMapClickListener { latLng ->
+                currentLocation = Pair(latLng.latitude, latLng.longitude)
+                view.findViewById<android.widget.EditText>(R.id.inputLocationLat).setText(String.format("%.6f", latLng.latitude))
+                view.findViewById<android.widget.EditText>(R.id.inputLocationLng).setText(String.format("%.6f", latLng.longitude))
+
+                // Update marker position
+                if (currentMarker != null) {
+                    currentMarker?.position = latLng
+                } else {
+                    currentMarker = googleMap.addMarker(
+                        MarkerOptions()
+                            .position(latLng)
+                            .title("Reminder Location")
+                    )
+                }
+            }
+        })
+
+        // Handle "Change Location on Map" button - could launch a full map picker activity
+        val btnViewOnMap = view.findViewById<android.widget.Button>(R.id.btnViewOnMap)
+        btnViewOnMap.setOnClickListener {
+            Toast.makeText(this, "Tap on the map preview above to change location", Toast.LENGTH_SHORT).show()
+        }
+
+        dialog.show()
+
+        // Store dialog reference for lifecycle management
+        mapView.setTag(dialog)
     }
 
     private fun getCurrentLocation(): Pair<Double, Double>? {
-        // Note: This method requires location permissions to be granted at runtime
-        return null // Return null to force user to enter coordinates manually
+        if (!checkLocationPermissions()) {
+            return null
+        }
+
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        var bestLocation: android.location.Location? = null
+
+        try {
+            val providers = locationManager.getProviders(true)
+            for (provider in providers) {
+                val location = locationManager.getLastKnownLocation(provider)
+                if (location != null) {
+                    if (bestLocation == null || location.accuracy < bestLocation.accuracy) {
+                        bestLocation = location
+                    }
+                }
+            }
+        } catch (e: SecurityException) {
+            return null
+        } catch (e: Exception) {
+            return null
+        }
+
+        return bestLocation?.let { Pair(it.latitude, it.longitude) }
     }
 
     private fun saveReminderFromDialog(formView: android.view.View) {
@@ -130,12 +257,6 @@ class MainActivity : AppCompatActivity() {
         val inputLocationLat = formView.findViewById(R.id.inputLocationLat) as android.widget.EditText
         val inputLocationLng = formView.findViewById(R.id.inputLocationLng) as android.widget.EditText
         val inputRadius = formView.findViewById(R.id.inputRadius) as android.widget.EditText
-
-        inputTitle.hint = "Title"
-        inputDescription.hint = "Description (optional)"
-        inputLocationLat.hint = "Latitude"
-        inputLocationLng.hint = "Longitude"
-        inputRadius.hint = "Radius (meters)"
 
         val title = inputTitle.text.toString().trim()
         val description = inputDescription.text.toString().trim()
@@ -148,28 +269,24 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val latTextTrimmed = latText.trim()
-        val lngTextTrimmed = lngText.trim()
-        val radiusTextTrimmed = radiusText.trim()
-
-        if (latTextTrimmed.isBlank()) {
-            Toast.makeText(this, "Please enter a valid latitude", Toast.LENGTH_SHORT).show()
+        if (latText.isBlank()) {
+            Toast.makeText(this, "Please select a location on the map", Toast.LENGTH_SHORT).show()
             return
         }
 
-        if (lngTextTrimmed.isBlank()) {
-            Toast.makeText(this, "Please enter a valid longitude", Toast.LENGTH_SHORT).show()
+        if (lngText.isBlank()) {
+            Toast.makeText(this, "Please select a location on the map", Toast.LENGTH_SHORT).show()
             return
         }
 
-        if (radiusTextTrimmed.isBlank()) {
+        if (radiusText.isBlank()) {
             Toast.makeText(this, "Please enter a valid radius in meters", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val lat = latTextTrimmed.toDoubleOrNull() ?: 0.0
-        val lng = lngTextTrimmed.toDoubleOrNull() ?: 0.0
-        val radius = radiusTextTrimmed.toIntOrNull() ?: 1000 // Default to 1000m if invalid
+        val lat = latText.toDoubleOrNull() ?: 0.0
+        val lng = lngText.toDoubleOrNull() ?: 0.0
+        val radius = radiusText.toIntOrNull() ?: 1000 // Default to 1000m if invalid
 
         try {
             db.insert(Reminder(
@@ -184,7 +301,7 @@ class MainActivity : AppCompatActivity() {
             ))
 
             loadReminders()
-            
+
             Toast.makeText(this, "Reminder added. Location tracking started.", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Error saving reminder", Toast.LENGTH_LONG).show()
