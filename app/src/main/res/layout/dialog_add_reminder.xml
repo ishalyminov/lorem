@@ -1,134 +1,155 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-xmlns:app="http://schemas.android.com/apk/res-auto"
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:padding="16dp">
-
-<LinearLayout
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:padding="16dp">
 
-    <!-- Title Input -->
-    <com.google.android.material.textfield.TextInputLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:hint="Reminder Title"
-    android:layout_marginBottom="8dp">
-
-    <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/inputTitle"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:inputType="textCapSentences|textMultiLine"
-        android:maxLines="2" />
+        android:orientation="vertical">
 
-    </com.google.android.material.textfield.TextInputLayout>
+        <!-- Title Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Reminder Title"
+            android:layout_marginBottom="8dp">
 
-    <!-- Description Input -->
-    <com.google.android.material.textfield.TextInputLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:hint="Description (optional)"
-    android:layout_marginBottom="8dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="2" />
 
-    <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/inputDescription"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:inputType="textCapSentences|textMultiLine"
-        android:maxLines="3" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-    </com.google.android.material.textfield.TextInputLayout>
+        <!-- Description Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Description (optional)"
+            android:layout_marginBottom="8dp">
 
-    <!-- Location Header -->
-    <TextView
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:text="Location:"
-    android:textSize="16sp"
-    android:textStyle="bold"
-    android:layout_marginBottom="8dp"/>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences|textMultiLine"
+                android:maxLines="3" />
 
-    <!-- Map Preview Card -->
-    <androidx.cardview.widget.CardView
-    android:id="@+id/mapPreviewCard"
-    android:layout_width="match_parent"
-    android:layout_height="200dp"
-    android:layout_marginBottom="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+        </com.google.android.material.textfield.TextInputLayout>
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <!-- Map View -->
-        <com.google.android.gms.maps.MapView
-        android:id="@+id/mapPreview"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-        <!-- Loading indicator -->
-        <ProgressBar
-        android:id="@+id/mapLoadingProgress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center" />
-
-        <!-- Location status text -->
+        <!-- Location Header -->
         <TextView
-        android:id="@+id/locationStatusText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="Getting location..."
-        android:textColor="@color/grey_600"
-        android:textSize="14sp"
-        android:visibility="gone" />
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Location:"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
 
-    </FrameLayout>
+        <!-- Address Search Input -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/address_search_background">
 
-    </androidx.cardview.widget.CardView>
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_search"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="Search icon" />
 
-    <!-- Hidden fields for lat/lng (stored but not shown) -->
-    <EditText
-    android:id="@+id/inputLocationLat"
-    android:layout_width="0dp"
-    android:layout_height="0dp"
-    android:visibility="gone" />
+            <AutoCompleteTextView
+                android:id="@+id/inputAddressSearch"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:hint="Search for address..."
+                android:inputType="textPostalAddress"
+                android:imeOptions="actionSearch"
+                android:background="@android:color/transparent"
+                android:completionThreshold="2" />
 
-    <EditText
-    android:id="@+id/inputLocationLng"
-    android:layout_width="0dp"
-    android:layout_height="0dp"
-    android:visibility="gone" />
+        </LinearLayout>
 
-    <!-- View Map button to change location -->
-    <Button
-    android:id="@+id/btnViewOnMap"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:text="🗺️ Change Location on Map"
-    android:layout_marginBottom="8dp"
-    style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+        <!-- Map Preview Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/mapPreviewCard"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginBottom="8dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp">
 
-    <!-- Proximity Radius Input -->
-    <com.google.android.material.textfield.TextInputLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:hint="Proximity Radius (meters)"
-    android:layout_marginBottom="8dp">
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
-    <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/inputRadius"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:inputType="numberDecimal"
-        android:maxLines="1" />
+                <!-- Map View -->
+                <com.google.android.gms.maps.MapView
+                    android:id="@+id/mapPreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
 
-    </com.google.android.material.textfield.TextInputLayout>
+                <!-- Loading indicator -->
+                <ProgressBar
+                    android:id="@+id/mapLoadingProgress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center" />
+
+                <!-- Location status text -->
+                <TextView
+                    android:id="@+id/locationStatusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="Getting location..."
+                    android:textColor="@color/grey_600"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+
+            </FrameLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Hidden fields for lat/lng (stored but not shown) -->
+        <EditText
+            android:id="@+id/inputLocationLat"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/inputLocationLng"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone" />
+
+        <!-- Proximity Radius Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Proximity Radius (meters)"
+            android:layout_marginBottom="8dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputRadius"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:maxLines="1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
 
     </LinearLayout>
 

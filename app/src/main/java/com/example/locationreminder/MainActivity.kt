@@ -9,6 +9,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -25,6 +26,11 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.AutocompletePrediction
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 
 class MainActivity : AppCompatActivity() {
 
@@ -120,6 +126,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showAddReminderDialog() {
+        // Initialize Places API if not already initialized
+        if (!Places.isInitialized()) {
+            Places.initialize(applicationContext, getMapsApiKey())
+        }
+        val placesClient = Places.createClient(this)
+
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_add_reminder, null)
 
         // Prefill with dummy title and description for user convenience
@@ -139,6 +151,64 @@ class MainActivity : AppCompatActivity() {
         // Track current location marker
         var currentMarker: Marker? = null
         var currentLocation: Pair<Double, Double>? = null
+
+        // Set up address search autocomplete
+        val addressSearch = view.findViewById<android.widget.AutoCompleteTextView>(R.id.inputAddressSearch)
+        val addressAdapter = ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line)
+        addressSearch.setAdapter(addressAdapter)
+        
+        addressSearch.setOnItemClickListener { parent, _, position, _ ->
+            val selectedAddress = parent.getItemAtPosition(position) as String
+            // Fetch place details for the selected address
+            fetchPlaceDetails(placesClient, selectedAddress, addressAdapter) { place ->
+                if (place != null) {
+                    currentLocation = Pair(place.latLng?.latitude ?: 0.0, place.latLng?.longitude ?: 0.0)
+                    
+                    // Update hidden fields
+                    view.findViewById<android.widget.EditText>(R.id.inputLocationLat).setText(
+                        String.format("%.6f", place.latLng?.latitude ?: 0.0)
+                    )
+                    view.findViewById<android.widget.EditText>(R.id.inputLocationLng).setText(
+                        String.format("%.6f", place.latLng?.longitude ?: 0.0)
+                    )
+                    
+                    // Update map
+                    mapView.getMapAsync { googleMap ->
+                        val latLng = place.latLng
+                        if (latLng != null) {
+                            // Update marker position
+                            if (currentMarker != null) {
+                                currentMarker?.position = latLng
+                            } else {
+                                currentMarker = googleMap.addMarker(
+                                    MarkerOptions()
+                                        .position(latLng)
+                                        .title("Reminder Location")
+                                )
+                            }
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
+                            
+                            // Hide loading, show map
+                            loadingProgress.visibility = android.view.View.GONE
+                            locationStatusText.visibility = android.view.View.GONE
+                            mapView.visibility = android.view.View.VISIBLE
+                        }
+                    }
+                }
+            }
+        }
+        
+        addressSearch.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                if (s != null && s.length >= 2) {
+                    searchAddresses(placesClient, s.toString(), addressAdapter)
+                }
+            }
+            
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
 
         // Create dialog first so we can manage MapView lifecycle
         val dialog = AlertDialog.Builder(this)
@@ -182,14 +252,14 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     // Show error state
                     loadingProgress.visibility = android.view.View.GONE
-                    locationStatusText.text = "Unable to get location. Tap 'Change Location on Map' to select manually."
+                    locationStatusText.text = "Unable to get location. Use the search box above to find an address."
                     locationStatusText.visibility = android.view.View.VISIBLE
                 }
             } else {
                 // Request permissions
                 requestLocationPermissions()
                 loadingProgress.visibility = android.view.View.GONE
-                locationStatusText.text = "Location permission required. Tap 'Change Location on Map' to select manually."
+                locationStatusText.text = "Location permission required. Use the search box above to find an address."
                 locationStatusText.visibility = android.view.View.VISIBLE
             }
 
@@ -209,19 +279,88 @@ class MainActivity : AppCompatActivity() {
                             .title("Reminder Location")
                     )
                 }
+                
+                // Clear the address search field since location was changed manually
+                addressSearch.setText("")
             }
         })
 
-        // Handle "Change Location on Map" button - could launch a full map picker activity
-        val btnViewOnMap = view.findViewById<android.widget.Button>(R.id.btnViewOnMap)
-        btnViewOnMap.setOnClickListener {
-            Toast.makeText(this, "Tap on the map preview above to change location", Toast.LENGTH_SHORT).show()
-        }
 
         dialog.show()
 
         // Store dialog reference for lifecycle management
         mapView.setTag(dialog)
+    }
+    
+    private fun getMapsApiKey(): String {
+        val keyFile = java.io.File(filesDir.parentFile, "../keystore/maps_api_key.properties")
+        if (keyFile.exists()) {
+            val props = java.util.Properties()
+            keyFile.inputStream().use { props.load(it) }
+            return props.getProperty("GOOGLE_MAPS_API_KEY", "")
+        }
+        return ""
+    }
+    
+    private fun searchAddresses(
+        placesClient: com.google.android.libraries.places.api.net.PlacesClient,
+        query: String,
+        adapter: ArrayAdapter<String>
+    ) {
+        val request = FindAutocompletePredictionsRequest.builder()
+            .setQuery(query)
+            .build()
+        
+        placesClient.findAutocompletePredictions(request)
+            .addOnSuccessListener { response ->
+                val predictions = response.autocompletePredictions
+                adapter.clear()
+                predictions.forEach { prediction ->
+                    adapter.add(prediction.getFullText(null).toString())
+                }
+                adapter.notifyDataSetChanged()
+            }
+            .addOnFailureListener { exception ->
+                // Handle error silently - user can still type manually
+            }
+    }
+    
+    private fun fetchPlaceDetails(
+        placesClient: com.google.android.libraries.places.api.net.PlacesClient,
+        addressText: String,
+        adapter: ArrayAdapter<String>,
+        callback: (Place?) -> Unit
+    ) {
+        // First find the prediction that matches the selected address
+        val request = FindAutocompletePredictionsRequest.builder()
+            .setQuery(addressText)
+            .build()
+        
+        placesClient.findAutocompletePredictions(request)
+            .addOnSuccessListener { response ->
+                val matchingPrediction = response.autocompletePredictions.find { 
+                    it.getFullText(null).toString() == addressText 
+                }
+                
+                if (matchingPrediction != null) {
+                    // Fetch the place details including coordinates
+                    val placeFields = listOf(Place.Field.LAT_LNG, Place.Field.NAME)
+                    val fetchPlaceRequest = FetchPlaceRequest.newInstance(matchingPrediction.placeId, placeFields)
+                    
+                    placesClient.fetchPlace(fetchPlaceRequest)
+                        .addOnSuccessListener { fetchResponse ->
+                            callback(fetchResponse.place)
+                        }
+                        .addOnFailureListener {
+                            callback(null)
+                        }
+                } else {
+                    callback(null)
+                }
+            }
+            .addOnFailureListener {
+                callback(null)
+            }
     }
 
     private fun getCurrentLocation(): Pair<Double, Double>? {
