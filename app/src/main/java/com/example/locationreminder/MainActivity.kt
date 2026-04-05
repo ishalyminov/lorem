@@ -293,11 +293,19 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun getMapsApiKey(): String {
-        val keyFile = java.io.File(filesDir.parentFile, "../keystore/maps_api_key.properties")
-        if (keyFile.exists()) {
-            val props = java.util.Properties()
-            keyFile.inputStream().use { props.load(it) }
-            return props.getProperty("GOOGLE_MAPS_API_KEY", "")
+        // Read API key from manifest metadata
+        try {
+            val appInfo = packageManager.getApplicationInfo(packageName, android.content.pm.PackageManager.GET_META_DATA)
+            val metaData = appInfo.metaData
+            return metaData?.getString("com.google.android.geo.API_KEY") ?: ""
+        } catch (e: Exception) {
+            // Fallback: Try to read from properties file
+            val keyFile = java.io.File("${filesDir.parentFile?.parentFile}/keystore/maps_api_key.properties")
+            if (keyFile.exists()) {
+                val props = java.util.Properties()
+                keyFile.inputStream().use { props.load(it) }
+                return props.getProperty("GOOGLE_MAPS_API_KEY", "")
+            }
         }
         return ""
     }
