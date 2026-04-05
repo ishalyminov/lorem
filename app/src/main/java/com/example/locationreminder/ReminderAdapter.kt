@@ -12,7 +12,8 @@ import com.example.locationreminder.data.ReminderDatabase
 
 open class ReminderAdapter(
     open var listener: ReminderClickListener? = null,
-    var database: ReminderDatabase? = null
+    var database: ReminderDatabase? = null,
+    var onDeleteCallback: (() -> Unit)? = null
 ) : RecycleView.Adapter<ReminderAdapter.ViewHolder>() {
 
     interface ReminderClickListener {
@@ -132,7 +133,7 @@ open class ReminderAdapter(
                     val currentReminder = (itemView.tag as? Reminder)
                     if (currentReminder != null) {
                         adapter.database?.delete(currentReminder.id)
-                        adapter.notifyItemRemoved(itemPosition)
+                    adapter.onDeleteCallback?.invoke()
                     }
                 }
                 

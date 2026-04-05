@@ -1,30 +1,39 @@
 <resources>
-    <!-- Base Application Theme -->
-    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/colorSecondary</item>
-        <item name="colorSecondaryVariant">@color/colorSecondaryDark</item>
-        <item name="colorOnSecondary">@color/black</item>
-        
-        <!-- Status and navigation bar colors -->
-        <item name="android:statusBarColor">@color/gradient_base_dark</item>
-        <item name="android:navigationBarColor">@color/gradient_base_dark</item>
-    </style>
+<!-- Base Application Theme -->
+<style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <item name="colorPrimary">@color/colorPrimary</item>
+    <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item>
+    <item name="colorOnPrimary">@color/white</item>
+    <item name="colorSecondary">@color/colorSecondary</item>
+    <item name="colorSecondaryVariant">@color/colorSecondaryDark</item>
+    <item name="colorOnSecondary">@color/black</item>
 
-    <!-- Theme.LocationReminder for AndroidManifest -->
-    <style name="Theme.LocationReminder" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/colorSecondary</item>
-        <item name="colorSecondaryVariant">@color/colorSecondaryDark</item>
-        <item name="colorOnSecondary">@color/black</item>
-        
-        <!-- Status and navigation bar colors -->
-        <item name="android:statusBarColor">@color/gradient_base_dark</item>
-        <item name="android:navigationBarColor">@color/gradient_base_dark</item>
-    </style>
+    <!-- Status and navigation bar colors -->
+    <item name="android:statusBarColor">@color/gradient_base_dark</item>
+    <item name="android:navigationBarColor">@color/gradient_base_dark</item>
+</style>
+
+<!-- Theme.LocationReminder for AndroidManifest -->
+<style name="Theme.LocationReminder" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <item name="colorPrimary">@color/colorPrimary</item>
+    <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item>
+    <item name="colorOnPrimary">@color/white</item>
+    <item name="colorSecondary">@color/colorSecondary</item>
+    <item name="colorSecondaryVariant">@color/colorSecondaryDark</item>
+    <item name="colorOnSecondary">@color/black</item>
+
+    <!-- Status and navigation bar colors -->
+    <item name="android:statusBarColor">@color/gradient_base_dark</item>
+    <item name="android:navigationBarColor">@color/gradient_base_dark</item>
+</style>
+
+<!-- Transparent Alert Dialog Style -->
+<style name="TransparentAlertDialog" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
+    <item name="android:windowBackground">@android:color/transparent</item>
+    <item name="android:windowIsTranslucent">true</item>
+    <item name="android:windowNoTitle">true</item>
+    <item name="android:backgroundDimEnabled">true</item>
+    <item name="android:backgroundDimAmount">0.3</item>
+</style>
 
 </resources>

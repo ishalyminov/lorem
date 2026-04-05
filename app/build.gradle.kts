@@ -97,7 +97,10 @@ android {
         // Google Play Services - Location
         implementation("com.google.android.gms:play-services-location:21.0.+")
 
-        // Google Maps SDK
-        implementation("com.google.android.gms:play-services-maps:19.0.+")
+ // Google Maps SDK
+ implementation("com.google.android.gms:play-services-maps:19.0.+")
+
+ // Google Places SDK for address autocomplete
+ implementation("com.google.android.libraries.places:places:4.1.0")
     }
 }

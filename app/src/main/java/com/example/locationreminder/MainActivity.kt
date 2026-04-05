@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.ArrayAdapter
+import android.widget.Filter
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -53,7 +54,7 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = layoutManager
 
         // Create and set up adapter with the database instance
-        adapter = ReminderAdapter(listener = null, database = db)
+        adapter = ReminderAdapter(listener = null, database = db, onDeleteCallback = { loadReminders() })
         recyclerView.adapter = adapter
 
         // Initialize and set up FAB in lower right corner
@@ -128,7 +129,19 @@ class MainActivity : AppCompatActivity() {
     private fun showAddReminderDialog() {
         // Initialize Places API if not already initialized
         if (!Places.isInitialized()) {
-            Places.initialize(applicationContext, getMapsApiKey())
+            val apiKey = getMapsApiKey()
+            android.util.Log.d("MainActivity", "Initializing Places with API key: ${if (apiKey.isNotEmpty()) "FOUND (${apiKey.take(10)}...)" else "NOT FOUND"}")
+            if (apiKey.isEmpty()) {
+                Toast.makeText(this, "Google Maps API key not found. Address search will not work.", Toast.LENGTH_LONG).show()
+            }
+            // Use the new Places API
+            try {
+                Places.initialize(applicationContext, apiKey)
+                android.util.Log.d("MainActivity", "Places API initialized successfully")
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Failed to initialize Places API", e)
+                Toast.makeText(this, "Failed to initialize Places API: ${e.message}", Toast.LENGTH_LONG).show()
+            }
         }
         val placesClient = Places.createClient(this)
 
@@ -154,8 +167,22 @@ class MainActivity : AppCompatActivity() {
 
         // Set up address search autocomplete
         val addressSearch = view.findViewById<android.widget.AutoCompleteTextView>(R.id.inputAddressSearch)
-        val addressAdapter = ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line)
+        val addressAdapter = object : ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_dropdown_item_1line) {
+            private val customFilter = object : Filter() {
+                override fun performFiltering(constraint: CharSequence?): Filter.FilterResults {
+                    val results = Filter.FilterResults()
+                    results.values = listOf<String>()
+                    results.count = 0
+                    return results
+                }
+                override fun publishResults(constraint: CharSequence?, results: Filter.FilterResults?) {}
+            }
+            override fun getFilter(): Filter = customFilter
+        }
         addressSearch.setAdapter(addressAdapter)
+
+        // Set dropdown background to transparent
+        addressSearch.setDropDownBackgroundDrawable(getDrawable(R.drawable.autocomplete_dropdown_bg))
         
         addressSearch.setOnItemClickListener { parent, _, position, _ ->
             val selectedAddress = parent.getItemAtPosition(position) as String
@@ -211,12 +238,15 @@ class MainActivity : AppCompatActivity() {
         })
 
         // Create dialog first so we can manage MapView lifecycle
-        val dialog = AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this, R.style.TransparentAlertDialog)
             .setTitle("Add Location Reminder")
             .setView(view)
             .setPositiveButton("Save") { _, _ -> saveReminderFromDialog(view) }
             .setNegativeButton("Cancel", null)
             .create()
+
+        // Set dialog window to be transparent
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         // Initialize MapView
         mapView.onCreate(null)
@@ -322,14 +352,22 @@ class MainActivity : AppCompatActivity() {
         placesClient.findAutocompletePredictions(request)
             .addOnSuccessListener { response ->
                 val predictions = response.autocompletePredictions
-                adapter.clear()
-                predictions.forEach { prediction ->
-                    adapter.add(prediction.getFullText(null).toString())
+                android.util.Log.d("MainActivity", "Found ${predictions.size} predictions")
+                runOnUiThread {
+                    adapter.clear()
+                    predictions.forEach { prediction ->
+                        android.util.Log.d("MainActivity", "Prediction: ${prediction.getFullText(null)}")
+                        adapter.add(prediction.getFullText(null).toString())
+                    }
+                    adapter.notifyDataSetChanged()
+                    android.util.Log.d("MainActivity", "Adapter count: ${adapter.count}")
                 }
-                adapter.notifyDataSetChanged()
             }
             .addOnFailureListener { exception ->
-                // Handle error silently - user can still type manually
+                android.util.Log.e("MainActivity", "Error fetching predictions", exception)
+                runOnUiThread {
+                    Toast.makeText(this, "Search error: ${exception.message}", Toast.LENGTH_SHORT).show()
+                }
             }
     }
     
