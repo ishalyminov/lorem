@@ -1,2 +1,32 @@
-# Build outputs build/ app/build/ *.apk .gradle/ gradle-app.setting # Gradle distributed files (should be downloaded automatically) gradle-8.6/ # IDE .idea/ *.iml .DS_Store .project .classpath # Local local.properties local.keystore # Keystore passwords (sensitive) keystore/*.jks # Maps API key (sensitive) keystore/maps_api_key.properties
+# Build outputs
+build/
+app/build/
+*.apk
+.gradle/
+gradle-app.setting
+
+# Gradle distributed files (should be downloaded automatically)
+gradle-8.6/
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+.project
+.classpath
+
+# Local
+local.properties
+local.keystore
+
+# Environment variables (secrets)
+.env
+
+# Keystore files (sensitive)
+keystore/*.jks
+keystore/*.pem
+keystore/keystore.properties
+keystore/maps_api_key.properties
+
+# Aider config (may contain API keys)
 .aider*

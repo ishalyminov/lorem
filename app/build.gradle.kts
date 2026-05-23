@@ -5,15 +5,52 @@ plugins {
     id("org.jetbrains.kotlin.android") version "1.9.20"
 }
 
-// Load Maps API key from properties file
+// Load Maps API key from .env file or environment variable
 val mapsApiKey: String by lazy {
-    val keyFile = file("../keystore/maps_api_key.properties")
-    if (keyFile.exists()) {
-        val props = Properties()
-        keyFile.inputStream().use { props.load(it) }
-        props.getProperty("GOOGLE_MAPS_API_KEY", "")
+    val envKey = System.getenv("GOOGLE_MAPS_API_KEY")
+    if (!envKey.isNullOrEmpty()) {
+        envKey
     } else {
-        ""
+        val envFile = file("../.env")
+        if (envFile.exists()) {
+            envFile.readLines()
+                .find { it.startsWith("GOOGLE_MAPS_API_KEY=") }
+                ?.substringAfter("=") ?: ""
+        } else {
+            ""
+        }
+    }
+}
+
+val keystoreStorePassword: String by lazy {
+    val envVal = System.getenv("KEYSTORE_STORE_PASSWORD")
+    if (!envVal.isNullOrEmpty()) {
+        envVal
+    } else {
+        val envFile = file("../.env")
+        if (envFile.exists()) {
+            envFile.readLines()
+                .find { it.startsWith("KEYSTORE_STORE_PASSWORD=") }
+                ?.substringAfter("=") ?: ""
+        } else {
+            ""
+        }
+    }
+}
+
+val keystoreKeyPassword: String by lazy {
+    val envVal = System.getenv("KEYSTORE_KEY_PASSWORD")
+    if (!envVal.isNullOrEmpty()) {
+        envVal
+    } else {
+        val envFile = file("../.env")
+        if (envFile.exists()) {
+            envFile.readLines()
+                .find { it.startsWith("KEYSTORE_KEY_PASSWORD=") }
+                ?.substringAfter("=") ?: ""
+        } else {
+            ""
+        }
     }
 }
 
@@ -61,9 +98,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("../keystore/location_reminder_new.jks")
-            storePassword = "REDACTED"
+            storePassword = keystoreStorePassword
             keyAlias = "location_reminder"
-            keyPassword = "REDACTED"
+            keyPassword = keystoreKeyPassword
         }
     }
 
