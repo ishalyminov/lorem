@@ -8,6 +8,9 @@ gradle-app.setting
 # Gradle distributed files (should be downloaded automatically)
 gradle-8.6/
 
+# Android SDK platforms
+platforms/
+
 # IDE
 .idea/
 *.iml
