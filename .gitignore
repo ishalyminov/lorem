@@ -23,6 +23,9 @@ platforms/
 local.properties
 local.keystore
 
+# Android SDK licenses
+licenses/
+
 # Environment variables (secrets)
 .env
 
