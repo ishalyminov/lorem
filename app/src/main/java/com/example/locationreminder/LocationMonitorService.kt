@@ -18,6 +18,8 @@ import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import java.util.concurrent.Executors
 
 class LocationMonitorService : Service() {
@@ -25,7 +27,8 @@ class LocationMonitorService : Service() {
     private val db: ReminderDatabase by lazy { ReminderDatabase(this) }
     private var lastKnownLocation: android.location.Location? = null
     private var fusedLocationClient: FusedLocationProviderClient? = null
-    
+    private var locationCallback: LocationCallback? = null
+
     private val pendingIntent by lazy {
         PendingIntent.getActivity(
             this, 0,
@@ -37,7 +40,7 @@ class LocationMonitorService : Service() {
             }
         )
     }
-    
+
     private val executor: java.util.concurrent.ExecutorService = Executors.newSingleThreadExecutor()
     private var handler: Handler? = null
     private var processRunnable: Runnable? = null
@@ -46,142 +49,231 @@ class LocationMonitorService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel("location_updates", "Location Updates", NotificationManager.IMPORTANCE_LOW)
-            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            nm.createNotificationChannel(channel)
+            val fgChannel = NotificationChannel(
+                CHANNEL_FOREGROUND,
+                "Location Monitoring",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Shows when location monitoring is active"
+                setShowBadge(false)
+            }
+            nm.createNotificationChannel(fgChannel)
+
+            val alertChannel = NotificationChannel(
+                CHANNEL_ALERTS,
+                "Reminder Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Alerts when you are near a reminder location"
+                enableVibration(true)
+                enableLights(true)
+            }
+            nm.createNotificationChannel(alertChannel)
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        val notification = createNotification("Monitoring Locations", "Tracking your current location for reminders")
-        startForeground(1, notification)
-        
-        handler = Handler()
-        processRunnable = object : Runnable { override fun run() { checkAndProcessLocation() } }
-        handler?.postDelayed(processRunnable!!, 2000L)
+        android.util.Log.i(TAG, "onStartCommand")
+
+        startForeground(FOREGROUND_NOTIFICATION_ID, buildForegroundNotification("Starting location monitoring..."))
+
+        handler = Handler(Looper.getMainLooper())
+        processRunnable = object : Runnable {
+            override fun run() { checkAndProcessLocation() }
+        }
+
         tryGetLocationAndUpdateTracking()
         return START_STICKY
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        handler?.removeCallbacks(processRunnable!!)
+        handler?.removeCallbacksAndMessages(null)
         handler = null
+        locationCallback?.let { fusedLocationClient?.removeLocationUpdates(it) }
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.cancel(1)
+        nm.cancel(FOREGROUND_NOTIFICATION_ID)
+    }
+
+    private fun tryGetLocationAndUpdateTracking() {
+        executor.execute {
+            fusedLocationClient?.let { client ->
+                android.util.Log.d(TAG, "Requesting last known location...")
+                client.lastLocation.addOnSuccessListener { location ->
+                    if (location != null) {
+                        android.util.Log.i(TAG, "Got last location: (${location.latitude}, ${location.longitude})")
+                        lastKnownLocation = location
+                        checkForReminderTriggers(location)
+                        updateForegroundNotification()
+                    }
+                    startContinuousTracking()
+                }.addOnFailureListener { e ->
+                    android.util.Log.e(TAG, "Failed to get last location", e)
+                    startContinuousTracking()
+                }
+            } ?: run {
+                android.util.Log.e(TAG, "fusedLocationClient is null!")
+                handler?.postDelayed(processRunnable!!, 5000L)
+            }
+        }
+    }
+
+    private fun startContinuousTracking() {
+        android.util.Log.i(TAG, "Starting continuous location tracking")
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+            .setMinUpdateIntervalMillis(2000)
+            .build()
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                super.onLocationResult(result)
+                result.lastLocation?.let {
+                    lastKnownLocation = it
+                    android.util.Log.d(TAG, "Location update: (${it.latitude}, ${it.longitude})")
+                }
+                lastKnownLocation?.let {
+                    checkForReminderTriggers(it)
+                    updateForegroundNotification()
+                }
+            }
+            override fun onLocationAvailability(availability: LocationAvailability) {
+                super.onLocationAvailability(availability)
+                if (!availability.isLocationAvailable) {
+                    android.util.Log.w(TAG, "Location not available")
+                    updateForegroundNotification("Location unavailable — waiting...")
+                }
+            }
+        }
+
+        try {
+            fusedLocationClient?.requestLocationUpdates(request, locationCallback!!, Looper.getMainLooper())
+            android.util.Log.i(TAG, "Location updates requested successfully")
+            updateForegroundNotification()
+        } catch (e: SecurityException) {
+            android.util.Log.e(TAG, "SecurityException requesting location updates", e)
+            updateForegroundNotification("Location permission denied")
+        }
     }
 
     private fun checkAndProcessLocation() {
         executor.execute {
             try {
                 lastKnownLocation?.let { location -> checkForReminderTriggers(location) }
-            } catch (e: Exception) { e.printStackTrace() }
-            handler?.postDelayed(processRunnable!!, 2000L)
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "Error in checkAndProcessLocation", e)
+            }
+            handler?.postDelayed(processRunnable!!, 10000L)
         }
     }
 
-    private fun tryGetLocationAndUpdateTracking() {
-        executor.execute {
-            fusedLocationClient?.let { client ->
-                client.lastLocation.addOnSuccessListener { location ->
-                    if (location != null) {
-                        lastKnownLocation = location
-                        checkForReminderTriggers(location)
-                        startContinuousTracking()
-                    } else {
-                        handler?.postDelayed(processRunnable!!, 2000L)
-                    }
-                }.addOnFailureListener { e -> 
-                    e.printStackTrace()
-                    handler?.postDelayed(processRunnable!!, 2000L)
-                }
-            } ?: run {
-                handler?.postDelayed(processRunnable!!, 2000L)
-            }
-        }
-    }
-
-    private fun startContinuousTracking() {
-        val locationRequest = LocationRequest.Builder(16, 2000).build()
-        val locationCallback = object : LocationCallback() {
-            override fun onLocationResult(result: LocationResult) {
-                super.onLocationResult(result)
-                result.lastLocation?.let { lastKnownLocation = it }
-                checkForReminderTriggers(lastKnownLocation!!)
-            }
-            override fun onLocationAvailability(availability: LocationAvailability) {
-                super.onLocationAvailability(availability)
-                if (!availability.isLocationAvailable) handler?.postDelayed(processRunnable!!, 2000L)
-            }
-        }
-        try {
-            fusedLocationClient?.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
-        } catch (e: SecurityException) {
-            e.printStackTrace()
-            handler?.postDelayed(processRunnable!!, 2000L)
-        }
-    }
-
-    private fun createNotification(contentText: String, subText: String): android.app.Notification {
-        return NotificationCompat.Builder(this, "location_updates")
-            .setContentTitle("Location Reminder Service").setSubText("$contentText - $subText")
+    private fun buildForegroundNotification(statusText: String): android.app.Notification {
+        val activeCount = try { db.getAllReminders().count { it.is_active } } catch (_: Exception) { 0 }
+        return NotificationCompat.Builder(this, CHANNEL_FOREGROUND)
+            .setContentTitle("Location Reminder Active")
+            .setContentText("$activeCount reminder(s) monitored — $statusText")
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-            .setContentIntent(pendingIntent).setOngoing(true).build()
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setContentIntent(pendingIntent)
+            .build()
+    }
+
+    private fun updateForegroundNotification(customStatus: String? = null) {
+        try {
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val status = customStatus ?: buildStatusText()
+            nm.notify(FOREGROUND_NOTIFICATION_ID, buildForegroundNotification(status))
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Failed to update foreground notification", e)
+        }
+    }
+
+    private fun buildStatusText(): String {
+        val loc = lastKnownLocation
+        if (loc == null) return "Waiting for location..."
+        val activeReminders = try { db.getAllReminders().filter { it.is_active } } catch (_: Exception) { emptyList() }
+        if (activeReminders.isEmpty()) return "No active reminders"
+
+        var closestDist = Double.MAX_VALUE
+        var closestName = ""
+        for (r in activeReminders) {
+            val d = calculateDistanceBetweenTwoPoints(loc.latitude, loc.longitude, r.locationLat, r.locationLng)
+            if (d < closestDist) {
+                closestDist = d
+                closestName = r.title
+            }
+        }
+        return "Nearest: \"${closestName}\" — ${String.format("%.0f", closestDist)}m away"
     }
 
     private fun checkForReminderTriggers(location: android.location.Location?) {
-        if (location == null) return
-        
+        if (location == null) {
+            android.util.Log.w(TAG, "checkForReminderTriggers called with null location")
+            return
+        }
         try {
             val activeReminders = db.getAllReminders().filter { it.is_active }
-            for (reminder in activeReminders) {
-                val distance = calculateDistanceBetweenTwoPoints(
-                    location.latitude, location.longitude, reminder.locationLat, reminder.locationLng)
-                val now = System.currentTimeMillis() / 1000L
-                val lastTriggerTime = triggerTimes[reminder.id] ?: 0L
-                if (distance <= reminder.proximityRadiusMeters && (now - lastTriggerTime) >= 60) {
-                    sendTriggerNotification(reminder, distance)
-                    triggerTimes[reminder.id] = now
-                }
+            android.util.Log.d(TAG, "Checking ${activeReminders.size} active reminders at (${location.latitude}, ${location.longitude})")
+
+        for (reminder in activeReminders) {
+            val distance = calculateDistanceBetweenTwoPoints(
+                location.latitude, location.longitude, reminder.locationLat, reminder.locationLng
+            )
+            android.util.Log.d(TAG, "Reminder '${reminder.title}' at (${reminder.locationLat}, ${reminder.locationLng}), radius=${reminder.proximityRadiusMeters}m, distance=${String.format("%.1f", distance)}m")
+
+            val inside = distance <= reminder.proximityRadiusMeters
+            if (inside && !insideRadius.contains(reminder.id)) {
+                android.util.Log.i(TAG, "TRIGGERING '${reminder.title}' — distance ${String.format("%.1f", distance)}m within radius ${reminder.proximityRadiusMeters}m")
+                sendTriggerNotification(reminder, distance)
+                insideRadius.add(reminder.id)
+            } else if (!inside && insideRadius.contains(reminder.id)) {
+                insideRadius.remove(reminder.id)
+                android.util.Log.i(TAG, "Left radius for '${reminder.title}' — cooldown cleared, distance ${String.format("%.1f", distance)}m")
             }
+        }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e(TAG, "Error in checkForReminderTriggers", e)
         }
     }
 
     private fun calculateDistanceBetweenTwoPoints(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        // Convert degrees to radians
         val rlat1 = Math.toRadians(lat1)
-        val rlon1 = Math.toRadians(lon1)
         val rlat2 = Math.toRadians(lat2)
-        val rlon2 = Math.toRadians(lon2)
-        
-        // Haversine formula calculation
-        val dLat = rlat2 - rlat1
-        val dLon = rlon2 - rlon1
-        
-        val sinHalfLonSq = Math.pow(Math.sin(dLon / 2.0), 2.0)
-        val sinHalfLatSq = Math.pow(Math.sin(dLat / 2.0), 2.0)
-        val a: Double = sinHalfLonSq + (Math.cos(rlat1) * Math.cos(rlat2) * sinHalfLatSq)
-        return (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a)) * 6371000.0)
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = Math.pow(Math.sin(dLat / 2.0), 2.0) + Math.cos(rlat1) * Math.cos(rlat2) * Math.pow(Math.sin(dLon / 2.0), 2.0)
+        return 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a)) * 6371000.0
     }
 
     private fun sendTriggerNotification(reminder: Reminder, distanceInMeters: Double) {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val notificationId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) android.os.Process.myPid() + reminder.id.toInt() else reminder.id.toInt()
-        val title = "${reminder.title}!"
-        val sub = String.format("You are %.1fm from the target location.", distanceInMeters.toDouble())
-        val notification = NotificationCompat.Builder(this, "location_updates")
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationId = 1000 + reminder.id.toInt()
+        val text = String.format("You are %.0fm from the target location.", distanceInMeters)
+        val notification = NotificationCompat.Builder(this, CHANNEL_ALERTS)
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-            .setContentTitle(title).setSubText(sub)
-            .setAutoCancel(true).setContentIntent(pendingIntent).build()
-        notificationManager.notify(notificationId, notification)
+            .setContentTitle("${reminder.title}!")
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+        nm.notify(notificationId, notification)
+        android.util.Log.i(TAG, "Notification sent for '${reminder.title}' (id=$notificationId)")
     }
 
     companion object {
-        private val triggerTimes: MutableMap<Long, Long> = java.util.concurrent.ConcurrentHashMap()
+        private const val TAG = "LocationMonitor"
+        private const val CHANNEL_FOREGROUND = "location_monitoring"
+        private const val CHANNEL_ALERTS = "reminder_alerts"
+        private const val FOREGROUND_NOTIFICATION_ID = 1
+        private val insideRadius: MutableSet<Long> = java.util.concurrent.ConcurrentHashMap<Long, Unit>().keySet(Unit)
+
         fun startLocationMonitoring(context: Context) {
             val intent = Intent(context, LocationMonitorService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(intent) else context.startService(intent)

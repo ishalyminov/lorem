@@ -41,6 +41,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
+        private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 2
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,11 +64,10 @@ class MainActivity : AppCompatActivity() {
 
         loadReminders()
 
-        // Request location permissions if not granted
         if (!checkLocationPermissions()) {
             requestLocationPermissions()
         } else {
-            // Start location monitoring service
+            requestNotificationPermissionIfNeeded()
             startLocationMonitoring()
         }
     }
@@ -118,10 +118,24 @@ class MainActivity : AppCompatActivity() {
             LOCATION_PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                     loadReminders()
+                    requestNotificationPermissionIfNeeded()
                     startLocationMonitoring()
                 } else {
                     Toast.makeText(this, "Location permission required for full functionality", Toast.LENGTH_LONG).show()
                 }
+            }
+            NOTIFICATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "Notifications won't appear without permission", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST_CODE)
             }
         }
     }
