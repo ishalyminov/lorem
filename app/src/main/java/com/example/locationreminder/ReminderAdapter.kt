@@ -53,6 +53,18 @@ open class ReminderAdapter(
         listener?.onReminderClick(reminder)
     }
 
+    fun getReminderAt(position: Int): Reminder = reminders[position]
+
+    fun removeReminder(position: Int) {
+        reminders.removeAt(position)
+        notifyItemRemoved(position)
+    }
+
+    fun restoreReminder(reminder: Reminder, position: Int) {
+        reminders.add(position, reminder)
+        notifyItemInserted(position)
+    }
+
     fun toggleStatus(reminder: Reminder) {
         val isActive = reminder.is_active
         lastTriggerTimes[reminder.id] = System.currentTimeMillis() / 1000L
@@ -70,7 +82,6 @@ open class ReminderAdapter(
         private val locationIcon: ImageView = itemView.findViewById(R.id.locationIcon)
         private val statusIndicator: View = itemView.findViewById(R.id.statusIndicator)
         private val triggeredIndicator: View = itemView.findViewById(R.id.triggeredIndicator)
-        private val deleteBtn: Button = itemView.findViewById(R.id.reminderDelete)
         private val statusBtn: Button = itemView.findViewById(R.id.reminderStatusBtn)
 
         private var reminder: Reminder? = null
@@ -82,8 +93,8 @@ open class ReminderAdapter(
             // Set the view tag for easy access from click listeners
             itemView.tag = reminder
             
-            titleText.text = reminder.title
-            descriptionText.text = reminder.description.ifEmpty { "No description" }
+            titleText.text = reminder.locationName.ifEmpty { "${reminder.locationLat}, ${reminder.locationLng}" }
+            descriptionText.text = reminder.title
             radiusText.text = "${reminder.proximityRadiusMeters}m radius"
 
             // Set status indicator color based on active state
@@ -127,14 +138,6 @@ open class ReminderAdapter(
                 itemView.setOnClickListener { 
                     val currentReminder = (it.tag as? Reminder) ?: return@setOnClickListener
                     adapter.onItemClicked(currentReminder)
-                }
-                
-                deleteBtn.setOnClickListener { 
-                    val currentReminder = (itemView.tag as? Reminder)
-                    if (currentReminder != null) {
-                        adapter.database?.delete(currentReminder.id)
-                    adapter.onDeleteCallback?.invoke()
-                    }
                 }
                 
                 statusBtn.setOnClickListener {

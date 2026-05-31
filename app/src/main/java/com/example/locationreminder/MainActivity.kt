@@ -5,15 +5,23 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import java.util.Locale
 import android.view.LayoutInflater
+import android.view.ViewGroup
+import android.view.animation.OvershootInterpolator
+import android.animation.ArgbEvaluator
+import android.animation.ValueAnimator
+import android.graphics.drawable.GradientDrawable
 import android.widget.ArrayAdapter
 import android.widget.Filter
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView as RecycleView
 import com.example.locationreminder.R
@@ -38,6 +46,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecycleView
     private lateinit var db: ReminderDatabase
     private lateinit var adapter: ReminderAdapter
+    private lateinit var addButton: com.google.android.material.floatingactionbutton.FloatingActionButton
+    private lateinit var settingsButton: com.google.android.material.floatingactionbutton.FloatingActionButton
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
@@ -48,6 +58,44 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val rootLayout = findViewById<android.view.View>(R.id.rootLayout)
+
+        val colorSets = listOf(
+            intArrayOf(android.graphics.Color.parseColor("#E8EAF6"), android.graphics.Color.parseColor("#C5CAE9"), android.graphics.Color.parseColor("#D1C4E9")),
+            intArrayOf(android.graphics.Color.parseColor("#F3E5F5"), android.graphics.Color.parseColor("#E1BEE7"), android.graphics.Color.parseColor("#EDE7F6")),
+            intArrayOf(android.graphics.Color.parseColor("#E0F2F1"), android.graphics.Color.parseColor("#B2DFDB"), android.graphics.Color.parseColor("#C8E6C9")),
+            intArrayOf(android.graphics.Color.parseColor("#E8EAF6"), android.graphics.Color.parseColor("#BBDEFB"), android.graphics.Color.parseColor("#C5CAE9")),
+            intArrayOf(android.graphics.Color.parseColor("#FFF3E0"), android.graphics.Color.parseColor("#FFE0B2"), android.graphics.Color.parseColor("#FFCCBC")),
+            intArrayOf(android.graphics.Color.parseColor("#FCE4EC"), android.graphics.Color.parseColor("#F8BBD0"), android.graphics.Color.parseColor("#E1BEE7"))
+        )
+
+        val gradientDrawable = GradientDrawable(GradientDrawable.Orientation.TL_BR, colorSets[0])
+        rootLayout.background = gradientDrawable
+
+        var animCycle = 0
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 12000
+            repeatCount = ValueAnimator.INFINITE
+            addUpdateListener { anim ->
+                val f = anim.animatedFraction
+                val i = animCycle % colorSets.size
+                val startColors = colorSets[i]
+                val endColors = colorSets[(i + 1) % colorSets.size]
+                gradientDrawable.colors = intArrayOf(
+                    ArgbEvaluator().evaluate(f, startColors[0], endColors[0]) as Int,
+                    ArgbEvaluator().evaluate(f, startColors[1], endColors[1]) as Int,
+                    ArgbEvaluator().evaluate(f, startColors[2], endColors[2]) as Int
+                )
+            }
+            addListener(object : android.animation.Animator.AnimatorListener {
+                override fun onAnimationStart(p0: android.animation.Animator) {}
+                override fun onAnimationEnd(p0: android.animation.Animator) {}
+                override fun onAnimationCancel(p0: android.animation.Animator) {}
+                override fun onAnimationRepeat(p0: android.animation.Animator) { animCycle++ }
+            })
+            start()
+        }
+
         db = ReminderDatabase.getInstance(this)
 
         recyclerView = findViewById(R.id.remindersRecyclerView)
@@ -55,14 +103,58 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = layoutManager
 
         // Create and set up adapter with the database instance
-        adapter = ReminderAdapter(listener = null, database = db, onDeleteCallback = { loadReminders() })
+        adapter = ReminderAdapter(
+            listener = object : ReminderAdapter.ReminderClickListener {
+                override fun onReminderClick(reminder: Reminder) {
+                    showAddReminderDialog(reminder)
+                }
+            },
+            database = db,
+            onDeleteCallback = { loadReminders() }
+        )
         recyclerView.adapter = adapter
 
-        // Initialize and set up FAB in lower right corner
-        val addButton = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.addReminderButton)
-        addButton.setOnClickListener { showAddReminderDialog() }
+        val swipeHandler = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+            override fun onMove(recyclerView: RecycleView, viewHolder: RecycleView.ViewHolder, target: RecycleView.ViewHolder): Boolean = false
 
-        loadReminders()
+            override fun onSwiped(viewHolder: RecycleView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                val reminder = adapter.getReminderAt(position)
+                adapter.removeReminder(position)
+
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("Delete Reminder")
+                    .setMessage("Are you sure you want to delete a reminder for ${reminder.title}?")
+                    .setPositiveButton("Delete") { _, _ ->
+                        db.delete(reminder.id)
+                        loadReminders()
+                    }
+                    .setNegativeButton("Cancel") { _, _ ->
+                        adapter.restoreReminder(reminder, position)
+                    }
+                    .setOnCancelListener {
+                        adapter.restoreReminder(reminder, position)
+                    }
+                    .show()
+            }
+        }
+        ItemTouchHelper(swipeHandler).attachToRecyclerView(recyclerView)
+
+        // Initialize and set up FAB in lower right corner
+        addButton = findViewById(R.id.addReminderButton)
+        addButton.setOnClickListener {
+            addButton.animate()
+                .rotation(135f)
+                .setDuration(300)
+                .setInterpolator(OvershootInterpolator())
+                .start()
+            showAddReminderDialog()
+        }
+
+        settingsButton = findViewById(R.id.settingsButton)
+        settingsButton.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
 
         if (!checkLocationPermissions()) {
             requestLocationPermissions()
@@ -70,6 +162,11 @@ class MainActivity : AppCompatActivity() {
             requestNotificationPermissionIfNeeded()
             startLocationMonitoring()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadReminders()
     }
 
     private fun loadReminders() {
@@ -140,7 +237,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showAddReminderDialog() {
+    private fun showAddReminderDialog(reminder: Reminder? = null) {
+        val isEditing = reminder != null
         // Initialize Places API if not already initialized
         if (!Places.isInitialized()) {
             val apiKey = getMapsApiKey()
@@ -161,14 +259,15 @@ class MainActivity : AppCompatActivity() {
 
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_add_reminder, null)
 
-        // Prefill with dummy title and description for user convenience
-        val dummyTitle = "My Location Reminder"
-        val dummyDescription = "A reminder about my current location"
-        view.findViewById<android.widget.EditText>(R.id.inputTitle).setText(dummyTitle)
-        view.findViewById<android.widget.EditText>(R.id.inputDescription).setText(dummyDescription)
-
-        // Set default radius
-        view.findViewById<android.widget.EditText>(R.id.inputRadius).setText("100")
+        if (isEditing) {
+            view.findViewById<android.widget.EditText>(R.id.inputTitle).setText(reminder!!.title)
+            view.findViewById<android.widget.EditText>(R.id.inputLocationLat).setText(
+                String.format("%.6f", reminder!!.locationLat)
+            )
+            view.findViewById<android.widget.EditText>(R.id.inputLocationLng).setText(
+                String.format("%.6f", reminder!!.locationLng)
+            )
+        }
 
         // Get MapView and set up the map
         val mapView = view.findViewById<MapView>(R.id.mapPreview)
@@ -178,6 +277,31 @@ class MainActivity : AppCompatActivity() {
         // Track current location marker
         var currentMarker: Marker? = null
         var currentLocation: Pair<Double, Double>? = null
+        var locationName = if (isEditing) reminder!!.locationName else ""
+        var selectedRadius = if (isEditing) reminder!!.proximityRadiusMeters else 100
+
+        // Set up radius selection
+        val radius50 = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.radius50)
+        val radius100 = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.radius100)
+        val radius200 = view.findViewById<com.google.android.material.button.MaterialButton>(R.id.radius200)
+        val radiusBtns = listOf(radius50, radius100, radius200)
+
+        fun updateRadiusSelection() {
+            radiusBtns.forEach { btn ->
+                val isSelected = (btn.tag as String).toInt() == selectedRadius
+                btn.alpha = if (isSelected) 1f else 0.35f
+                btn.setBackgroundColor(if (isSelected) 0x40FFFFFF.toInt() else android.graphics.Color.TRANSPARENT)
+            }
+        }
+
+        radiusBtns.forEach { btn ->
+            btn.setOnClickListener {
+                selectedRadius = (btn.tag as String).toInt()
+                updateRadiusSelection()
+            }
+        }
+
+        updateRadiusSelection()
 
         // Set up address search autocomplete
         val addressSearch = view.findViewById<android.widget.AutoCompleteTextView>(R.id.inputAddressSearch)
@@ -195,16 +319,16 @@ class MainActivity : AppCompatActivity() {
         }
         addressSearch.setAdapter(addressAdapter)
 
-        // Set dropdown background to transparent
         addressSearch.setDropDownBackgroundDrawable(getDrawable(R.drawable.autocomplete_dropdown_bg))
-        
+
         addressSearch.setOnItemClickListener { parent, _, position, _ ->
             val selectedAddress = parent.getItemAtPosition(position) as String
             // Fetch place details for the selected address
             fetchPlaceDetails(placesClient, selectedAddress, addressAdapter) { place ->
                 if (place != null) {
                     currentLocation = Pair(place.latLng?.latitude ?: 0.0, place.latLng?.longitude ?: 0.0)
-                    
+                    locationName = selectedAddress
+
                     // Update hidden fields
                     view.findViewById<android.widget.EditText>(R.id.inputLocationLat).setText(
                         String.format("%.6f", place.latLng?.latitude ?: 0.0)
@@ -252,15 +376,26 @@ class MainActivity : AppCompatActivity() {
         })
 
         // Create dialog first so we can manage MapView lifecycle
-        val dialog = AlertDialog.Builder(this, R.style.TransparentAlertDialog)
-            .setTitle("Add Location Reminder")
+        val dialog = AlertDialog.Builder(this, R.style.FullScreenDialog)
             .setView(view)
-            .setPositiveButton("Save") { _, _ -> saveReminderFromDialog(view) }
+            .setPositiveButton(if (isEditing) "Update" else "Save") { _, _ ->
+                if (isEditing) saveReminderFromDialog(view, selectedRadius, existingReminder = reminder, locationName = locationName)
+                else saveReminderFromDialog(view, selectedRadius, locationName = locationName)
+            }
             .setNegativeButton("Cancel", null)
             .create()
 
-        // Set dialog window to be transparent
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        view.findViewById<android.widget.TextView>(R.id.dialogTitle).text =
+            if (isEditing) "Edit Location Reminder" else "Add Location Reminder"
+
+        dialog.window?.setWindowAnimations(R.style.DialogAnimation)
+        dialog.setOnDismissListener {
+            addButton.animate()
+                .rotation(0f)
+                .setDuration(300)
+                .setInterpolator(OvershootInterpolator())
+                .start()
+        }
 
         // Initialize MapView
         mapView.onCreate(null)
@@ -270,8 +405,19 @@ class MainActivity : AppCompatActivity() {
             googleMap.uiSettings.isMyLocationButtonEnabled = false
             googleMap.uiSettings.isMapToolbarEnabled = false
 
-            // Get current location and show on map
-            if (checkLocationPermissions()) {
+            if (isEditing) {
+                currentLocation = Pair(reminder!!.locationLat, reminder!!.locationLng)
+                val latLng = LatLng(reminder!!.locationLat, reminder!!.locationLng)
+                currentMarker = googleMap.addMarker(
+                    MarkerOptions()
+                        .position(latLng)
+                        .title("Reminder Location")
+                )
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
+                loadingProgress.visibility = android.view.View.GONE
+                locationStatusText.visibility = android.view.View.GONE
+                mapView.visibility = android.view.View.VISIBLE
+            } else if (checkLocationPermissions()) {
                 val location = getCurrentLocation()
                 if (location != null) {
                     currentLocation = location
@@ -288,6 +434,10 @@ class MainActivity : AppCompatActivity() {
                             .title("Reminder Location")
                     )
                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
+
+                    geocodeLocation(location.first, location.second) { name ->
+                        locationName = name
+                    }
 
                     // Hide loading, show map
                     loadingProgress.visibility = android.view.View.GONE
@@ -326,11 +476,21 @@ class MainActivity : AppCompatActivity() {
                 
                 // Clear the address search field since location was changed manually
                 addressSearch.setText("")
+                geocodeLocation(latLng.latitude, latLng.longitude) { name ->
+                    locationName = name
+                }
             }
         })
 
 
         dialog.show()
+        dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            dialog.window?.decorView?.post {
+                dialog.window?.setBackgroundBlurRadius(25)
+            }
+        }
+        dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
 
         // Store dialog reference for lifecycle management
         mapView.setTag(dialog)
@@ -450,18 +610,31 @@ class MainActivity : AppCompatActivity() {
         return bestLocation?.let { Pair(it.latitude, it.longitude) }
     }
 
-    private fun saveReminderFromDialog(formView: android.view.View) {
+    private fun geocodeLocation(lat: Double, lng: Double, callback: (String) -> Unit) {
+        Thread {
+            try {
+                val geocoder = Geocoder(this, Locale.getDefault())
+                val addresses = geocoder.getFromLocation(lat, lng, 1)
+                val name = if (!addresses.isNullOrEmpty()) {
+                    addresses[0].getAddressLine(0) ?: "$lat, $lng"
+                } else {
+                    "$lat, $lng"
+                }
+                runOnUiThread { callback(name) }
+            } catch (e: Exception) {
+                runOnUiThread { callback("$lat, $lng") }
+            }
+        }.start()
+    }
+
+    private fun saveReminderFromDialog(formView: android.view.View, radius: Int, existingReminder: Reminder? = null, locationName: String = "") {
         val inputTitle = formView.findViewById(R.id.inputTitle) as android.widget.EditText
-        val inputDescription = formView.findViewById(R.id.inputDescription) as android.widget.EditText
         val inputLocationLat = formView.findViewById(R.id.inputLocationLat) as android.widget.EditText
         val inputLocationLng = formView.findViewById(R.id.inputLocationLng) as android.widget.EditText
-        val inputRadius = formView.findViewById(R.id.inputRadius) as android.widget.EditText
 
         val title = inputTitle.text.toString().trim()
-        val description = inputDescription.text.toString().trim()
         val latText = inputLocationLat.text.toString().trim()
         val lngText = inputLocationLng.text.toString().trim()
-        val radiusText = inputRadius.text.toString().trim()
 
         if (title.isEmpty()) {
             Toast.makeText(this, "Title is required", Toast.LENGTH_SHORT).show()
@@ -478,30 +651,34 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        if (radiusText.isBlank()) {
-            Toast.makeText(this, "Please enter a valid radius in meters", Toast.LENGTH_SHORT).show()
-            return
-        }
-
         val lat = latText.toDoubleOrNull() ?: 0.0
         val lng = lngText.toDoubleOrNull() ?: 0.0
-        val radius = radiusText.toIntOrNull() ?: 1000 // Default to 1000m if invalid
 
         try {
-            db.insert(Reminder(
-                id = 0,
-                title = title,
-                description = description,
-                locationLat = lat,
-                locationLng = lng,
-                proximityRadiusMeters = radius,
-                is_active = true,
-                createdAt = System.currentTimeMillis()
-            ))
+            if (existingReminder != null) {
+                db.update(existingReminder.copy(
+                    title = title,
+                    locationLat = lat,
+                    locationLng = lng,
+                    proximityRadiusMeters = radius,
+                    locationName = locationName
+                ))
+                Toast.makeText(this, "Reminder updated.", Toast.LENGTH_SHORT).show()
+            } else {
+                db.insert(Reminder(
+                    id = 0,
+                    title = title,
+                    locationLat = lat,
+                    locationLng = lng,
+                    proximityRadiusMeters = radius,
+                    locationName = locationName,
+                    is_active = true,
+                    createdAt = System.currentTimeMillis()
+                ))
+                Toast.makeText(this, "Reminder added. Location tracking started.", Toast.LENGTH_SHORT).show()
+            }
 
             loadReminders()
-
-            Toast.makeText(this, "Reminder added. Location tracking started.", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Error saving reminder", Toast.LENGTH_LONG).show()
         }

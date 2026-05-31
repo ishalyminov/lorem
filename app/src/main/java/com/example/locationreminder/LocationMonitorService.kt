@@ -171,10 +171,9 @@ class LocationMonitorService : Service() {
     }
 
     private fun buildForegroundNotification(statusText: String): android.app.Notification {
-        val activeCount = try { db.getAllReminders().count { it.is_active } } catch (_: Exception) { 0 }
         return NotificationCompat.Builder(this, CHANNEL_FOREGROUND)
             .setContentTitle("Location Reminder Active")
-            .setContentText("$activeCount reminder(s) monitored — $statusText")
+            .setContentText("Location reminder active")
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -253,12 +252,11 @@ class LocationMonitorService : Service() {
     private fun sendTriggerNotification(reminder: Reminder, distanceInMeters: Double) {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notificationId = 1000 + reminder.id.toInt()
-        val text = String.format("You are %.0fm from the target location.", distanceInMeters)
         val notification = NotificationCompat.Builder(this, CHANNEL_ALERTS)
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-            .setContentTitle("${reminder.title}!")
-            .setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentTitle(reminder.title)
+            .setContentText(reminder.locationName)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(reminder.locationName))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)

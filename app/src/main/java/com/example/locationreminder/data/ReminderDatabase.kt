@@ -14,9 +14,9 @@ import com.example.locationreminder.data.Reminder
 class ReminderDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
-        const val DATABASE_VERSION = 1
+        const val DATABASE_VERSION = 2
         const val DATABASE_NAME = "reminder_database"
-        
+
         fun getInstance(context: Context): ReminderDatabase = ReminderDatabase(context.applicationContext)
     }
 
@@ -24,22 +24,23 @@ class ReminderDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
         db?.execSQL("CREATE TABLE reminders (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "title TEXT NOT NULL, " +
-                "description TEXT DEFAULT '', " +
                 "locationLat REAL NOT NULL, " +
                 "locationLng REAL NOT NULL, " +
                 "proximityRadiusMeters INTEGER NOT NULL, " +
+                "location_name TEXT DEFAULT '', " +
                 "is_active INTEGER DEFAULT 1, " +
                 "createdAt INTEGER NOT NULL)")
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-        db?.execSQL("DROP TABLE IF EXISTS reminders")
-        onCreate(db)
+        if (oldVersion < 2) {
+            db?.execSQL("ALTER TABLE reminders ADD COLUMN location_name TEXT DEFAULT ''")
+        }
     }
 
     /** Extension function to get readable database */
     fun readable(): SQLiteDatabase? = this.readableDatabase
-    
+
     /** Extension function to get writable database */
     fun writable(): SQLiteDatabase? = this.writableDatabase
 
@@ -53,7 +54,7 @@ class ReminderDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
         val db = this.db() ?: throw IllegalStateException("Database not initialized")
         return db.query(
             "reminders",
-            arrayOf("id", "title", "description", "locationLat", "locationLng", "proximityRadiusMeters", "is_active", "createdAt"),
+            arrayOf("id", "title", "locationLat", "locationLng", "proximityRadiusMeters", "location_name", "is_active", "createdAt"),
             null,
             null,
             null,
@@ -65,13 +66,13 @@ class ReminderDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
                 do {
                     val id = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
                     val title = cursor.getString(cursor.getColumnIndexOrThrow("title"))
-                    val description = getStringOrNull(cursor, "description") ?: ""
                     val locationLat = cursor.getDouble(cursor.getColumnIndexOrThrow("locationLat"))
                     val locationLng = cursor.getDouble(cursor.getColumnIndexOrThrow("locationLng"))
                     val proximityRadiusMeters = cursor.getInt(cursor.getColumnIndexOrThrow("proximityRadiusMeters"))
+                    val locationName = getStringOrNull(cursor, "location_name") ?: ""
                     val is_active = cursor.getInt(cursor.getColumnIndexOrThrow("is_active")) != 0
                     val createdAt = cursor.getLong(cursor.getColumnIndexOrThrow("createdAt"))
-                    reminders.add(Reminder(id, title, description, locationLat, locationLng, proximityRadiusMeters, is_active, createdAt))
+                    reminders.add(Reminder(id, title, locationLat, locationLng, proximityRadiusMeters, locationName, is_active, createdAt))
                 } while (cursor.moveToNext())
             }
             reminders
@@ -85,7 +86,7 @@ class ReminderDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
         val db = this.writable() ?: throw IllegalStateException("No writable database")
         // First check for existing record with same location and radius that is inactive
         var existingId: Long? = null
-        
+
         val existingCursor = db.query(
             "reminders",
             arrayOf("id", "is_active"),
@@ -93,7 +94,7 @@ class ReminderDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
             arrayOf(reminder.locationLat.toString(), reminder.locationLng.toString(), reminder.proximityRadiusMeters.toString()),
             null, null, null
         )
-        
+
         existingCursor.use { cursor ->
             if (cursor.moveToFirst()) {
                 do {
@@ -108,19 +109,19 @@ class ReminderDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
                 } while (cursor.moveToNext())
             }
         }
-        
+
         // Deactivate existing inactive record if found
         existingId?.let { id ->
             db.update("reminders", android.content.ContentValues().apply { put("is_active", 0) }, "id = ?", arrayOf(id.toString()))
         }
-        
+
         // Insert new record
         val values = android.content.ContentValues().apply {
             put("title", reminder.title)
-            put("description", reminder.description)
             put("locationLat", reminder.locationLat)
             put("locationLng", reminder.locationLng)
             put("proximityRadiusMeters", reminder.proximityRadiusMeters)
+            put("location_name", reminder.locationName)
             put("is_active", if (reminder.is_active) 1 else 0)
             put("createdAt", reminder.createdAt)
         }
@@ -133,15 +134,15 @@ class ReminderDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
     fun update(reminder: Reminder) {
         val db = this.db() ?: return
         if (reminder.id <= 0) return
-        
+
         db.update(
             "reminders",
             android.content.ContentValues().apply {
                 put("title", reminder.title)
-                put("description", reminder.description)
                 put("locationLat", reminder.locationLat)
                 put("locationLng", reminder.locationLng)
                 put("proximityRadiusMeters", reminder.proximityRadiusMeters)
+                put("location_name", reminder.locationName)
                 put("is_active", if (reminder.is_active) 1 else 0)
             },
             "id = ?",
@@ -153,10 +154,10 @@ class ReminderDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
         val db = this.readable()
             ?: this.writable()
             ?: throw IllegalStateException("Database not initialized")
-        
+
         return db.query(
             "reminders",
-            arrayOf("id", "title", "description", "locationLat", "locationLng", "proximityRadiusMeters", "is_active", "createdAt"),
+            arrayOf("id", "title", "locationLat", "locationLng", "proximityRadiusMeters", "location_name", "is_active", "createdAt"),
             "id = ?",
             arrayOf(id.toString()),
             null,
@@ -167,10 +168,10 @@ class ReminderDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NA
                 Reminder(
                     id = cursor.getLong(cursor.getColumnIndexOrThrow("id")),
                     title = cursor.getString(cursor.getColumnIndexOrThrow("title")),
-                    description = getStringOrNull(cursor, "description") ?: "",
                     locationLat = cursor.getDouble(cursor.getColumnIndexOrThrow("locationLat")),
                     locationLng = cursor.getDouble(cursor.getColumnIndexOrThrow("locationLng")),
                     proximityRadiusMeters = cursor.getInt(cursor.getColumnIndexOrThrow("proximityRadiusMeters")),
+                    locationName = getStringOrNull(cursor, "location_name") ?: "",
                     is_active = cursor.getInt(cursor.getColumnIndexOrThrow("is_active")) != 0,
                     createdAt = cursor.getLong(cursor.getColumnIndexOrThrow("createdAt"))
                 )

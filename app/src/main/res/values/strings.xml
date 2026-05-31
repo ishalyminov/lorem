@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Location Reminder</string>
+    <string name="app_name">Lorem</string>
     <string name="add_reminder">Add Reminder</string>
     <string name="edit_reminder">Edit Reminder</string>
     <string name="delete_reminder">Delete Reminder</string>
