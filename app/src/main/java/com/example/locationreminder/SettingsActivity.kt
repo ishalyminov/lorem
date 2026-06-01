@@ -12,9 +12,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -82,8 +79,7 @@ class SettingsActivity : AppCompatActivity() {
             Toast.makeText(this, "No reminders to export", Toast.LENGTH_SHORT).show()
             return
         }
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
-        val fileName = "reminders_${dateFormat.format(Date())}.json"
+        val fileName = "lorem_reminders.json"
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             type = "application/json"
             addCategory(Intent.CATEGORY_OPENABLE)

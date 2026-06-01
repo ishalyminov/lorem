@@ -54,4 +54,10 @@
     <item name="android:windowExitAnimation">@anim/dialog_exit</item>
 </style>
 
+<!-- Delete confirmation dialog with readable colors -->
+<style name="DeleteReminderDialog" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+    <item name="colorOnSurface">@color/white</item>
+    <item name="colorSurface">@color/surface_variant</item>
+</style>
+
 </resources>

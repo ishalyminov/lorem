@@ -172,8 +172,8 @@ class LocationMonitorService : Service() {
 
     private fun buildForegroundNotification(statusText: String): android.app.Notification {
         return NotificationCompat.Builder(this, CHANNEL_FOREGROUND)
-            .setContentTitle("Location Reminder Active")
-            .setContentText("Location reminder active")
+            .setContentTitle("Lorem")
+            .setContentText("Location reminders active")
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)

@@ -122,7 +122,7 @@ class MainActivity : AppCompatActivity() {
                 val reminder = adapter.getReminderAt(position)
                 adapter.removeReminder(position)
 
-                AlertDialog.Builder(this@MainActivity)
+                AlertDialog.Builder(this@MainActivity, R.style.DeleteReminderDialog)
                     .setTitle("Delete Reminder")
                     .setMessage("Are you sure you want to delete a reminder for ${reminder.title}?")
                     .setPositiveButton("Delete") { _, _ ->
