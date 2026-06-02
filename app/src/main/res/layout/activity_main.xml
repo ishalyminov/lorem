@@ -44,20 +44,20 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="16dp"/>
 
-    <!-- Settings button in lower left corner -->
+    <!-- Settings button in upper right corner -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/settingsButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:backgroundTint="#40000000"
         app:rippleColor="@color/colorSecondary"
-        android:src="@android:drawable/ic_menu_preferences"
+        android:src="@android:drawable/ic_menu_manage"
         android:contentDescription="Settings"
         app:tint="@color/white"
         app:elevation="0dp"
         app:fabSize="mini"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="16dp"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

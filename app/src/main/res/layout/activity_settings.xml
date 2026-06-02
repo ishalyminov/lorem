@@ -85,12 +85,13 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnExport"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:text="Export"
-                        app:backgroundTint="@color/colorPrimary"
+                        app:strokeColor="@color/colorSecondary"
                         app:cornerRadius="12dp"
-                        android:textColor="@color/white"/>
+                        android:textColor="@color/colorSecondary"/>
 
                 </LinearLayout>
 
@@ -133,12 +134,13 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnImport"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:text="Import"
-                        app:backgroundTint="@color/colorSecondary"
+                        app:strokeColor="#80FFFFFF"
                         app:cornerRadius="12dp"
-                        android:textColor="@color/black"/>
+                        android:textColor="@color/white"/>
 
                 </LinearLayout>
 
