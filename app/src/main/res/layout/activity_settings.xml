@@ -89,9 +89,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:text="Export"
-                        app:strokeColor="@color/colorSecondary"
+                        app:strokeColor="#80FFFFFF"
                         app:cornerRadius="12dp"
-                        android:textColor="@color/colorSecondary"/>
+                        android:textColor="@color/white"/>
 
                 </LinearLayout>
 
