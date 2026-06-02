@@ -51,7 +51,7 @@
         android:layout_height="wrap_content"
         app:backgroundTint="#40000000"
         app:rippleColor="@color/colorSecondary"
-        android:src="@android:drawable/ic_menu_manage"
+        android:src="@drawable/ic_settings_cog"
         android:contentDescription="Settings"
         app:tint="@color/white"
         app:elevation="0dp"
