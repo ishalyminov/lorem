@@ -1,4 +1,4 @@
-package com.example.locationreminder
+package com.shalyminov.lorem
 
 import android.view.LayoutInflater
 import android.view.View
@@ -7,8 +7,8 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView as RecycleView
-import com.example.locationreminder.data.Reminder
-import com.example.locationreminder.data.ReminderDatabase
+import com.shalyminov.lorem.data.Reminder
+import com.shalyminov.lorem.data.ReminderDatabase
 
 open class ReminderAdapter(
     open var listener: ReminderClickListener? = null,

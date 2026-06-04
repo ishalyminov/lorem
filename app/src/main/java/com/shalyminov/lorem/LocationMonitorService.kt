@@ -1,4 +1,4 @@
-package com.example.locationreminder
+package com.shalyminov.lorem
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -11,8 +11,8 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
-import com.example.locationreminder.data.Reminder
-import com.example.locationreminder.data.ReminderDatabase
+import com.shalyminov.lorem.data.Reminder
+import com.shalyminov.lorem.data.ReminderDatabase
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.location.LocationCallback

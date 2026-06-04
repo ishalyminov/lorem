@@ -1,4 +1,4 @@
-package com.example.locationreminder.data
+package com.shalyminov.lorem.data
 
 data class Reminder(
     val id: Long = 0,

@@ -55,11 +55,11 @@ val keystoreKeyPassword: String by lazy {
 }
 
 android {
-    namespace = "com.example.locationreminder"
+    namespace = "com.shalyminov.lorem"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.locationreminder"
+        applicationId = "com.shalyminov.lorem"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

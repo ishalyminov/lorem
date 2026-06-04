@@ -1,4 +1,4 @@
-package com.example.locationreminder.data
+package com.shalyminov.lorem.data
 
 import android.content.Context
 import android.database.Cursor
@@ -8,8 +8,8 @@ import android.view.LayoutInflater
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager as LinearLayoutManagerImpl
 import androidx.recyclerview.widget.RecyclerView as RecycleView
-import com.example.locationreminder.ReminderAdapter
-import com.example.locationreminder.data.Reminder
+import com.shalyminov.lorem.ReminderAdapter
+import com.shalyminov.lorem.data.Reminder
 
 class ReminderDatabase(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 

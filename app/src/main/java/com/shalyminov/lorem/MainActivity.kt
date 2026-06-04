@@ -1,4 +1,4 @@
-package com.example.locationreminder
+package com.shalyminov.lorem
 
 import android.Manifest
 import android.content.Context
@@ -24,10 +24,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView as RecycleView
-import com.example.locationreminder.R
-import com.example.locationreminder.ReminderAdapter
-import com.example.locationreminder.data.Reminder
-import com.example.locationreminder.data.ReminderDatabase
+import com.shalyminov.lorem.R
+import com.shalyminov.lorem.ReminderAdapter
+import com.shalyminov.lorem.data.Reminder
+import com.shalyminov.lorem.data.ReminderDatabase
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
