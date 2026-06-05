@@ -11,10 +11,11 @@
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <application
-        android:allowBackup="true"
-        android:label="@string/app_name"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.LocationReminder">
+    android:allowBackup="true"
+    android:icon="@mipmap/ic_launcher"
+    android:label="@string/app_name"
+    android:supportsRtl="true"
+    android:theme="@style/Theme.LocationReminder">
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
@@ -37,16 +38,16 @@
             android:launchMode="singleTop">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.locationreminder.MainActivity" />
-        </activity>
+android:value="com.shalyminov.lorem.MainActivity" />
+    </activity>
 
-        <activity
-            android:name=".SettingsActivity"
-            android:exported="false"
-            android:launchMode="singleTop">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.locationreminder.MainActivity" />
+    <activity
+        android:name=".SettingsActivity"
+        android:exported="false"
+        android:launchMode="singleTop">
+        <meta-data
+            android:name="android.support.PARENT_ACTIVITY"
+            android:value="com.shalyminov.lorem.MainActivity" />
         </activity>
 
         <service
@@ -55,7 +56,7 @@
             android:exported="false"
             android:foregroundServiceType="location">
             <intent-filter>
-                <action android:name="com.example.locationreminder.LocationMonitorService" />
+                <action android:name="com.shalyminov.lorem.LocationMonitorService" />
             </intent-filter>
         </service>
 
