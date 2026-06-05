@@ -43,7 +43,7 @@ All data can be deleted by uninstalling the App, which removes the local databas
 
 ## Children's Privacy
 
-The App does not address anyone under the age of 13 and does not knowingly collect personal information from children.
+Lorem is a productivity utility and is not directed at children under the age of 13. The App does not knowingly collect, use, or disclose personal information from children. If a parent or guardian becomes aware that a child under 13 has provided personal data through the App, they may contact us at the address below and we will take steps to delete such information from the device.
 
 ## Changes to This Policy
 
